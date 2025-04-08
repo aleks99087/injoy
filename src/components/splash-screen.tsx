@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { tg } from '../lib/telegram'; // проверь путь, может быть другим
 
 export function SplashScreen() {
   const navigate = useNavigate();
@@ -8,9 +9,17 @@ export function SplashScreen() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsAnimating(false);
+
+      // доп. таймер для выхода после анимации
       setTimeout(() => {
-        navigate('/feed');
-      }, 2500); // Additional delay for exit animation
+        const startParam = tg.initDataUnsafe?.start_param;
+        if (startParam?.startsWith('trip_')) {
+          const tripId = startParam.replace('trip_', '');
+          navigate(`/trips/${tripId}`);
+        } else {
+          navigate('/feed');
+        }
+      }, 2500);
     }, 3000);
 
     return () => clearTimeout(timer);
