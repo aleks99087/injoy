@@ -374,11 +374,14 @@ export function Feed() {
                       <div className="absolute top-12 right-2 bg-white rounded-lg shadow-lg p-2 z-20">
                         <button
                           onClick={() => {
-                            const tripUrl = `https://injoy-ten.vercel.app/share/${trip.id}`; // ссылка на страницу-шлюз
-                            const text = `${trip.title} — маршрут в INJOY`;
+                            const version = Date.now();
+                            const shareUrl = `https://functions.yandexcloud.net/d4etklk1qgrtvu71maeu?id=${trip.id}&v=${version}`;
+                            const caption = `${trip.title} — маршрут в INJOY`;
 
+                            // Отправляем ссылку с превью (страница функции), Telegram покажет OG preview
+                            // Но внутри пользователь увидит кнопку "Открыть в Telegram", которая откроет Mini App
                             window.open(
-                              `https://t.me/share/url?url=${encodeURIComponent(tripUrl)}&text=${encodeURIComponent(text)}`
+                              `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(caption)}`
                             );
 
                             setShowShareMenu(null);

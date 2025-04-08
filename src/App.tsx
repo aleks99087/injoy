@@ -6,7 +6,8 @@ import { Feed } from './components/feed';
 import { TripDetails } from './components/trip-details';
 import { CreateTrip } from './components/create-trip/create-trip';
 import { PhotoViewer } from './components/photo-viewer';
-import { SharePage } from './pages/share';
+import SharePage from './pages/share';
+
 
 function App() {
   useEffect(() => {
