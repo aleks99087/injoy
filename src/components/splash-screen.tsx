@@ -5,7 +5,6 @@ import { tg } from '../lib/telegram'; // проверь путь, может б�
 export function SplashScreen() {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(true);
-  const [debugStartParam, setDebugStartParam] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -17,7 +16,6 @@ export function SplashScreen() {
         const tripIdFromUrl = searchParams.get('trip_id');
       
         const startParam = tg.getStartParam();
-        setDebugStartParam(startParam || 'нет параметра');
       
         const tripIdFromStartParam = startParam?.startsWith('trip_')
           ? startParam.replace('trip_', '')
