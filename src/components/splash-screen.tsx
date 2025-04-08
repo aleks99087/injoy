@@ -13,6 +13,9 @@ export function SplashScreen() {
       // доп. таймер для выхода после анимации
       setTimeout(() => {
         const startParam = tg.getStartParam();
+        console.log('🧩 startParam из Telegram:', startParam);
+        alert(`🧩 startParam: ${startParam}`);
+      
         if (startParam?.startsWith('trip_')) {
           const tripId = startParam.replace('trip_', '');
           navigate(`/trips/${tripId}`);
