@@ -12,7 +12,7 @@ export function SplashScreen() {
 
       // доп. таймер для выхода после анимации
       setTimeout(() => {
-        const startParam = tg.initDataUnsafe?.start_param;
+        const startParam = tg.getStartParam();
         if (startParam?.startsWith('trip_')) {
           const tripId = startParam.replace('trip_', '');
           navigate(`/trips/${tripId}`);

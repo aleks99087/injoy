@@ -4,6 +4,7 @@ declare global {
       WebApp: {
         initData: string;
         initDataUnsafe: {
+          start_param?: string; // ✅ добавлено
           user?: {
             id: number;
             first_name: string;
@@ -87,6 +88,12 @@ export const tg = {
       return window.Telegram?.WebApp.colorScheme;
     }
     return 'light';
+  },
+  getStartParam: () => {
+    if (isTelegramWebApp()) {
+      return window.Telegram?.WebApp.initDataUnsafe.start_param;
+    }
+    return undefined;
   }
 };
 

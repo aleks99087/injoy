@@ -17,11 +17,10 @@ export function SharePage() {
 
       setTrip(data);
 
-      // ⏱ Ждём, чтобы Telegram успел обработать OG-мета-теги
+      // редирект в Mini App через start_param
       setTimeout(() => {
-        const miniAppUrl = `https://t.me/injoy_trip_bot?startapp=trip_${id}`;
-        window.location.href = miniAppUrl;
-      }, 1500);
+        window.location.href = `https://t.me/injoy_trip_bot?startapp=trip_${id}`;
+      }, 1200); // можно уменьшить задержку, чтобы не тормозило
     };
 
     fetchTrip();
@@ -31,7 +30,7 @@ export function SharePage() {
 
   const title = `${trip.title} — маршрут в INJOY`;
   const description = 'Смотри маршрут, ставь лайк и добавляй в избранное';
-  const image = trip.photo_url || 'https://storage.yandexcloud.net/injoy-static/default-cover.jpg';
+  const image = trip.photo_url || 'https://injoy-ten.vercel.app/default-preview.jpg';
 
   return (
     <>
@@ -43,7 +42,9 @@ export function SharePage() {
         <meta property="og:type" content="website" />
         <meta property="og:url" content={`https://injoy-ten.vercel.app/share/${id}`} />
       </Helmet>
-      <p>Загружаем маршрут...</p>
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
+        <p>Переходим в маршрут...</p>
+      </div>
     </>
   );
 }
