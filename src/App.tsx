@@ -6,6 +6,7 @@ import { Feed } from './components/feed';
 import { TripDetails } from './components/trip-details';
 import { CreateTrip } from './components/create-trip/create-trip';
 import { PhotoViewer } from './components/photo-viewer';
+import { SharePage } from './pages/share';
 
 function App() {
   useEffect(() => {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/trips/:id" element={<TripDetails />} />
         <Route path="/create" element={<CreateTrip />} />
         <Route path="/points/:pointId/photos" element={<PhotoViewer />} />
+        <Route path="/share/:id" element={<SharePage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -375,8 +375,9 @@ export function Feed() {
                         <button
                           onClick={() => {
                             const baseUrl = "https://injoy-ten.vercel.app";
-                            const tripUrl = `${baseUrl}/trips/${trip.id}`;
-                            window.open(`https://t.me/share/url?url=${encodeURIComponent(tripUrl)}`);
+                            const tripUrl = `https://injoy-ten.vercel.app/share/${trip.id}`;
+                            const text = `${trip.title} — маршрут в INJOY`;
+                            window.open(`https://t.me/share/url?url=${encodeURIComponent(tripUrl)}&text=${encodeURIComponent(text)}`);
                             setShowShareMenu(null);
                           }}
                           className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
