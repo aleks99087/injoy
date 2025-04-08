@@ -16,6 +16,7 @@ type Trip = {
   likes: number;
   comments: number;
   country: string | null;
+  points?: { name: string }[]; // Added points field
 };
 
 type Comment = {
@@ -42,13 +43,14 @@ export function Feed() {
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [copiedTripUrl, setCopiedTripUrl] = useState<string | null>(null);
 
-  const years = ['all', '2024', '2023', '2022', '2021', '2020', '2019'];
   const currentUserId = tg.getUser()?.id.toString() || '00000000-0000-0000-0000-000000000001';
 
   useEffect(() => {
     loadTrips();
-  }, [selectedYear, viewMode]);
+  }, [selectedYear, viewMode, searchQuery]);
 
   const loadTrips = async () => {
     try {
@@ -60,7 +62,7 @@ export function Feed() {
       if (viewMode === 'personal') {
         query = query.eq('user_id', currentUserId);
       } else {
-        query = query.eq('is_public', true)
+        query = query.eq('is_public', true);
       }
 
       if (selectedYear !== 'all') {
@@ -71,7 +73,45 @@ export function Feed() {
       const { data, error: tripsError } = await query.order('created_at', { ascending: false });
 
       if (tripsError) throw tripsError;
-      setTrips(data || []);
+
+      let loadedTrips = data || [];
+
+      // Load points for trips
+      const tripIds = loadedTrips.map((trip) => trip.id);
+      const { data: pointsData, error: pointsError } = await supabase
+        .from('points')
+        .select('id, name, trip_id')
+        .in('trip_id', tripIds);
+
+      if (pointsError) throw pointsError;
+
+      // Map points to trips
+      const pointsByTripId: Record<string, { name: string }[]> = {};
+      (pointsData || []).forEach((point) => {
+        if (!pointsByTripId[point.trip_id]) {
+          pointsByTripId[point.trip_id] = [];
+        }
+        pointsByTripId[point.trip_id].push({ name: point.name });
+      });
+
+      loadedTrips = loadedTrips.map((trip) => ({
+        ...trip,
+        points: pointsByTripId[trip.id] || [],
+      }));
+
+      // Filter trips based on search query
+      if (searchQuery.trim()) {
+        const query = searchQuery.trim().toLowerCase();
+
+        loadedTrips = loadedTrips.filter((trip) =>
+          trip.title.toLowerCase().includes(query) ||
+          (trip.country?.toLowerCase().includes(query)) ||
+          (trip.location?.toLowerCase().includes(query)) ||
+          (trip.points?.some((point) => point.name.toLowerCase().includes(query)))
+        );
+      }
+
+      setTrips(loadedTrips);
     } catch (err) {
       console.error('Error loading trips:', err);
       setError('Failed to load trips');
@@ -93,25 +133,6 @@ export function Feed() {
     } catch (err) {
       console.error('Error loading comments:', err);
     }
-  };
-
-  const handleShare = (tripId: string, platform: 'telegram' | 'instagram' | 'copy') => {
-    const tripUrl = `${window.location.origin}/trips/${tripId}`;
-    
-    switch (platform) {
-      case 'telegram':
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(tripUrl)}`);
-        break;
-      case 'instagram':
-        window.open(`instagram://story-camera`);
-        break;
-      case 'copy':
-        navigator.clipboard.writeText(tripUrl);
-        alert('Link copied to clipboard!');
-        break;
-    }
-    
-    setShowShareMenu(null);
   };
 
   const handleDelete = async (tripId: string) => {
@@ -271,20 +292,14 @@ export function Feed() {
             </div>
           </div>
 
-          <div className="flex space-x-2 overflow-x-auto mt-4">
-            {years.map((year) => (
-              <button
-                key={year}
-                onClick={() => setSelectedYear(year)}
-                className={`px-4 py-1 rounded-full text-sm whitespace-nowrap ${
-                  selectedYear === year
-                    ? 'bg-[#FA5659] text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {year === 'all' ? 'ВСЕ' : year}
-              </button>
-            ))}
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Поиск по маршрутам, локациям и странам"
+              className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FA5659]"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
       </header>
@@ -358,19 +373,24 @@ export function Feed() {
                     {showShareMenu === trip.id && (
                       <div className="absolute top-12 right-2 bg-white rounded-lg shadow-lg p-2 z-20">
                         <button
-                          onClick={() => handleShare(trip.id, 'telegram')}
+                          onClick={() => {
+                            const baseUrl = "https://injoy-ten.vercel.app";
+                            const tripUrl = `${baseUrl}/trips/${trip.id}`;
+                            window.open(`https://t.me/share/url?url=${encodeURIComponent(tripUrl)}`);
+                            setShowShareMenu(null);
+                          }}
                           className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
                         >
                           Поделиться в Telegram
                         </button>
                         <button
-                          onClick={() => handleShare(trip.id, 'instagram')}
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
-                        >
-                          Поделиться в Instagram
-                        </button>
-                        <button
-                          onClick={() => handleShare(trip.id, 'copy')}
+                          onClick={() => {
+                            const baseUrl = "https://injoy-ten.vercel.app";
+                            const tripUrl = `${baseUrl}/trips/${trip.id}`;
+                            navigator.clipboard.writeText(tripUrl);
+                            setCopiedTripUrl(tripUrl);
+                            setShowShareMenu(null);
+                          }}
                           className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
                         >
                           Скопировать ссылку
@@ -494,6 +514,15 @@ export function Feed() {
         confirmText="Удалить"
         cancelText="Отмена"
         type="danger"
+      />
+      <Modal
+        isOpen={!!copiedTripUrl}
+        onClose={() => setCopiedTripUrl(null)}
+        onConfirm={() => setCopiedTripUrl(null)}
+        title="Ссылка скопирована"
+        description="Вы можете вставить её в чат, заметки или сохранить себе"
+        confirmText="Ок"
+        cancelText=""
       />
     </div>
   );

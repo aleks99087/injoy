@@ -190,6 +190,18 @@ export function TripDetails() {
     loadTripDetails();
   }, [id]);
 
+  useEffect(() => {
+    if (showMap) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showMap]);
+
   const handleRating = async (pointId: string, rating: number) => {
     try {
       const { error } = await supabase
@@ -405,8 +417,10 @@ export function TripDetails() {
             ))}
           </div>
         )}
+      </div>
 
-        {showMap && selectedPoint && (
+      {showMap && selectedPoint && (
+        <div className="fixed inset-0 z-[999] bg-black/50 flex items-center justify-center">
           <MapSelector
             onClose={() => setShowMap(false)}
             currentPosition={{
@@ -417,6 +431,7 @@ export function TripDetails() {
               lat: selectedPoint.latitude!,
               lng: selectedPoint.longitude!,
             }}
+            zoom={13}
             allPoints={points
               .filter((p) => p.latitude !== null && p.longitude !== null)
               .map((p) => ({
@@ -426,8 +441,8 @@ export function TripDetails() {
               }))}
             title={selectedPoint.name}
           />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

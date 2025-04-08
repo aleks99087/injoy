@@ -136,12 +136,12 @@ export function MapSelector({
         </div>
 
         <div className="h-[400px]">
-          <MapContainer center={fallbackPosition} zoom={zoom} className="h-full w-full">
+          <MapContainer center={fallbackPosition} zoom={currentZoom} className="h-full w-full">
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <CenterMap position={fallbackPosition} zoom={zoom} />
+            <CenterMap position={fallbackPosition} zoom={currentZoom} />
 
             {allPoints.map((p, i) => (
               <Marker
