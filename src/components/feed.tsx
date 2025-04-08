@@ -374,10 +374,13 @@ export function Feed() {
                       <div className="absolute top-12 right-2 bg-white rounded-lg shadow-lg p-2 z-20">
                         <button
                           onClick={() => {
-                            const botUsername = "injoy_trip_bot"; // без @
-                            const tripUrl = `https://t.me/${botUsername}?startapp=trip_${trip.id}`;
+                            const tripUrl = `https://injoy-ten.vercel.app/share/${trip.id}`; // ссылка на страницу-шлюз
                             const text = `${trip.title} — маршрут в INJOY`;
-                            window.open(`https://t.me/share/url?url=${encodeURIComponent(tripUrl)}&text=${encodeURIComponent(text)}`);
+
+                            window.open(
+                              `https://t.me/share/url?url=${encodeURIComponent(tripUrl)}&text=${encodeURIComponent(text)}`
+                            );
+
                             setShowShareMenu(null);
                           }}
                           className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded"

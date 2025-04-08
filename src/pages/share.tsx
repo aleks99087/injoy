@@ -17,10 +17,11 @@ export function SharePage() {
 
       setTrip(data);
 
-      // редирект на полноценную страницу маршрута
+      // ⏱ Ждём, чтобы Telegram успел обработать OG-мета-теги
       setTimeout(() => {
-        window.location.href = `/trips/${id}`;
-      }, 500);
+        const miniAppUrl = `https://t.me/injoy_trip_bot?startapp=trip_${id}`;
+        window.location.href = miniAppUrl;
+      }, 1500);
     };
 
     fetchTrip();
@@ -30,7 +31,7 @@ export function SharePage() {
 
   const title = `${trip.title} — маршрут в INJOY`;
   const description = 'Смотри маршрут, ставь лайк и добавляй в избранное';
-  const image = trip.photo_url || 'https://your-default-image.jpg';
+  const image = trip.photo_url || 'https://storage.yandexcloud.net/injoy-static/default-cover.jpg';
 
   return (
     <>
