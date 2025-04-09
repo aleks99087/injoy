@@ -115,7 +115,7 @@ export function CreateTrip() {
 
   const removePoint = (index: number) => {
     if (points.length <= 1) {
-      setError('Поездка должна содержать хотя бы одну точку маршрута');
+      setError('маршрут должен содержать хотя бы одну локацию');
       return;
     }
     const newPoints = points.filter((_, i) => i !== index);
@@ -314,7 +314,7 @@ export function CreateTrip() {
       navigate(`/trips/${trip.id}`);
     } catch (err) {
       console.error('Error saving trip:', err);
-      setError(err instanceof Error ? err.message : 'Не удалось сохранить поездку. Пожалуйста, попробуйте снова.');
+      setError(err instanceof Error ? err.message : 'Не удалось сохранить маршрут. Пожалуйста, попробуйте снова.');
     } finally {
       setIsSaving(false);
     }

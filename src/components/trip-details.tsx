@@ -666,8 +666,8 @@ export function TripDetails() {
           handleDelete(tripToDelete!.id);
           setTripToDelete(null);
         }}
-        title="Удаление поездки"
-        description="Вы уверены, что хотите удалить эту поездку? Это действие нельзя будет отменить."
+        title="Удаление маршрута"
+        description="Вы уверены, что хотите удалить этот маршрут? Это действие нельзя будет отменить."
         confirmText="Удалить"
         cancelText="Отмена"
         type="danger"

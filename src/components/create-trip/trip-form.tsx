@@ -77,12 +77,12 @@ export function TripForm({ onSubmit, initialData = {} }: TripFormProps) {
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      setError('Пожалуйста, введите название поездки');
+      setError('Пожалуйста, введите название маршрута');
       return;
     }
 
     if (!mainPhoto) {
-      setError('Пожалуйста, добавьте главное фото поездки');
+      setError('Пожалуйста, добавьте главное фото маршрута');
       return;
     }
 
@@ -92,7 +92,7 @@ export function TripForm({ onSubmit, initialData = {} }: TripFormProps) {
     }
 
     if (!location) {
-      setError('Пожалуйста, выберите место поездки');
+      setError('Пожалуйста, выберите место маршрута');
       return;
     }
 
@@ -158,14 +158,14 @@ export function TripForm({ onSubmit, initialData = {} }: TripFormProps) {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Название поездки
+          Название маршрута
         </label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="w-full p-2 border rounded-lg"
-          placeholder="Введите название поездки"
+          placeholder="Введите название маршрута"
         />
       </div>
 
@@ -252,7 +252,7 @@ export function TripForm({ onSubmit, initialData = {} }: TripFormProps) {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Место поездки
+          Место маршрута
         </label>
         <input
           type="text"

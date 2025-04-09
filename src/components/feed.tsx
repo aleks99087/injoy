@@ -161,7 +161,7 @@ export function Feed() {
       setTrips(prev => prev.filter(t => t.id !== tripToDelete));
     } catch (err) {
       console.error('Error deleting trip:', err);
-      alert('Не удалось удалить поездку. Пожалуйста, попробуйте позже.');
+      alert('Не удалось удалить маршрут. Пожалуйста, попробуйте позже.');
     } finally {
       setDeletingTrip(null);
       setTripToDelete(null);
@@ -514,8 +514,8 @@ export function Feed() {
         isOpen={!!tripToDelete}
         onClose={() => setTripToDelete(null)}
         onConfirm={confirmDelete}
-        title="Удаление поездки"
-        description="Вы уверены, что хотите удалить эту поездку? Это действие нельзя будет отменить."
+        title="Удаление маршрута"
+        description="Вы уверены, что хотите удалить этот маршрут? Это действие нельзя будет отменить."
         confirmText="Удалить"
         cancelText="Отмена"
         type="danger"
