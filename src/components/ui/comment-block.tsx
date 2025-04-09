@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { tg } from '../../lib/telegram';
@@ -12,15 +12,18 @@ type Comment = {
 
 type CommentBlockProps = {
   tripId: string;
+  onExpand?: () => void;
+  onCommentAdded?: () => void; // Callback for when a new comment is added
 };
 
-export function CommentBlock({ tripId }: CommentBlockProps) {
+export function CommentBlock({ tripId, onExpand, onCommentAdded }: CommentBlockProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const currentUserId = tg.getUser()?.id.toString() || 'anonymous';
+  const inputRef = useRef<HTMLTextAreaElement>(null); // Реф для поля ввода
 
   const loadComments = async () => {
     const { data, error } = await supabase
@@ -39,6 +42,11 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
   useEffect(() => {
     if (expanded) {
       loadComments();
+      onExpand?.(); // Notify parent component
+      // Прокручиваем к полю ввода комментария
+      setTimeout(() => {
+        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
     }
   }, [expanded]);
 
@@ -61,6 +69,7 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
 
       setComments((prev) => [...prev, data]);
       setNewComment('');
+      onCommentAdded?.(); // Notify parent component
     } catch (err) {
       console.error('Ошибка отправки комментария:', err);
     } finally {
@@ -95,7 +104,8 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
           {comments.length === 0 ? (
             <div className="text-gray-400 italic">Пока нет комментариев</div>
           ) : (
-            <div className="space-y-4 max-h-[200px] overflow-y-auto pr-1 mb-4">
+            <div className="space-y-4 h-[200px] overflow-y-auto pr-1 mb-4">
+              {/* Increased max-height to 300px */}
               {comments.map((comment) => (
                 <div key={comment.id}>
                   <div className="text-sm text-gray-800 font-semibold">
@@ -110,18 +120,20 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
             </div>
           )}
 
-          <div>
+          {/* Fixed height for input and button */}
+          <div className="sticky bottom-0 bg-white pt-2">
             <textarea
+              ref={inputRef} // Привязываем реф к полю ввода
               rows={2}
               placeholder="Напишите комментарий..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              className="w-full p-2 border rounded-lg text-sm"
+              className="w-full p-2 border rounded-lg text-sm h-[60px]" // Fixed height for textarea
             />
             <button
               onClick={handleSubmit}
               disabled={submitting || !newComment.trim()}
-              className="mt-2 w-full bg-[#FA5659] text-white rounded-lg py-2 hover:bg-[#E04E51] disabled:opacity-50"
+              className="mt-2 w-full bg-[#FA5659] text-white rounded-lg py-2 hover:bg-[#E04E51] disabled:opacity-50 h-[40px]" // Fixed height for button
             >
               Отправить
             </button>

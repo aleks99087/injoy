@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Menu, Share2 } from 'lucide-react';
+import { ChevronLeft, Menu, Share2, Heart, MessageCircle, ChevronUp } from 'lucide-react';
 import { useKeenSlider } from 'keen-slider/react';
 import "keen-slider/keen-slider.min.css";
 import { supabase } from '../lib/supabase';
@@ -9,6 +9,7 @@ import { MapSelector } from './create-trip/map-selector';
 import { Modal } from './ui/modal';
 import { TripFooter } from './ui/trip-footer';
 import { CommentBlock } from './ui/comment-block';
+import { LikeButton } from './ui/like-button';
 
 type Trip = {
   id: string;
@@ -72,9 +73,12 @@ export function TripDetails() {
   const [tripToDelete, setTripToDelete] = useState<Trip | null>(null);
   const [showShareMenu, setShowShareMenu] = useState<boolean>(false);
   const [copiedTripUrl, setCopiedTripUrl] = useState<string | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
-
-
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [tripLikes, setTripLikes] = useState<number>(0);
+  const [tripComments, setTripComments] = useState<number>(0);
+  const [expandedComments, setExpandedComments] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState<string>('');
+  const [submittingComment, setSubmittingComment] = useState<boolean>(false);
 
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
     initial: 0,
@@ -227,7 +231,7 @@ export function TripDetails() {
       if (error) {
         console.error('Ошибка загрузки комментариев:', error);
       } else {
-        setComments(data || []);
+        setComments((prev) => ({ ...prev, [trip.id]: data || [] }));
       }
     };
   
@@ -245,6 +249,13 @@ export function TripDetails() {
       document.body.style.overflow = '';
     };
   }, [showMap]);
+
+  useEffect(() => {
+    if (trip) {
+      setTripLikes(trip.likes);
+      setTripComments(trip.comments);
+    }
+  }, [trip]);
 
   const handleRating = async (pointId: string, rating: number) => {
     try {
@@ -279,6 +290,50 @@ export function TripDetails() {
       instanceRef.current.moveToIdx(index, true, {
         duration: ANIMATION_DURATION
       });
+    }
+  };
+
+  const handleLike = async () => {
+    try {
+      const { error } = await supabase
+        .from('trips')
+        .update({ likes: tripLikes + 1 })
+        .eq('id', trip!.id);
+
+      if (error) throw error;
+
+      setTripLikes((prev) => prev + 1);
+    } catch (err) {
+      console.error('Error updating likes:', err);
+    }
+  };
+
+  const handleCommentAdded = () => {
+    setTripComments((prev) => prev + 1);
+  };
+
+  const handleSubmitComment = async (tripId: string) => {
+    if (!newComment.trim()) return;
+
+    setSubmittingComment(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('trip_comments')
+        .insert([{ trip_id: tripId, text: newComment }]);
+
+      if (error) throw error;
+
+      setComments((prev) => ({
+        ...prev,
+        [tripId]: [...(prev[tripId] || []), data[0]],
+      }));
+      setNewComment('');
+      handleCommentAdded();
+    } catch (err) {
+      console.error('Error submitting comment:', err);
+    } finally {
+      setSubmittingComment(false);
     }
   };
 
@@ -513,18 +568,70 @@ export function TripDetails() {
                       <p className="text-gray-600">{point.impressions}</p>
                     </div>
                   )}
-
-                  {point.description && (
-                    <div>
-                      <h3 className="text-xl font-semibold mb-2">Описание</h3>
-                      <p className="text-gray-600">{point.description}</p>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        <div className="p-4">
+          <div className="flex items-center space-x-4">
+            <LikeButton tripId={trip.id} initialCount={tripLikes} userId={trip.user_id} />
+            <button
+              className="flex items-center text-gray-600"
+              onClick={() =>
+                setExpandedComments(expandedComments === trip.id ? null : trip.id)
+              }
+            >
+              <MessageCircle className="w-5 h-5 mr-1" />
+              <span>{tripComments}</span>
+            </button>
+          </div>
+
+          <div className="bg-white border rounded-xl mt-4 p-4 space-y-4">
+            <h2 className="text-lg font-semibold">Комментарии</h2>
+
+            <div className="space-y-4 max-h-[250px] overflow-y-auto pr-1">
+            {(comments[trip.id] || []).slice(0, 100).map((comment) => {
+              if (!comment || !comment.user_id || !comment.text) return null;
+
+              return (
+                <div key={comment.id} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
+                    {(comment.user_id[0] || 'U').toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-800 font-semibold">
+                      {comment.user_id.slice(0, 6)}
+                    </div>
+                    <div className="text-sm text-gray-600">{comment.text}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {new Date(comment.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            </div>
+
+            <div>
+              <textarea
+                rows={2}
+                placeholder="Напишите комментарий..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="w-full p-2 border rounded-lg text-sm"
+              />
+              <button
+                onClick={() => handleSubmitComment(trip.id)}
+                disabled={submittingComment || !newComment.trim()}
+                className="mt-2 w-full bg-[#FA5659] text-white rounded-lg py-2 hover:bg-[#E04E51] disabled:opacity-50"
+              >
+                Отправить
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {showMap && selectedPoint && (
@@ -551,21 +658,6 @@ export function TripDetails() {
           />
         </div>
       )}
-
-      <div className="bg-white border-t mt-8">
-        <TripFooter
-          tripId={trip.id}
-          userId={trip.user_id}
-          createdAt={trip.created_at}
-          likes={trip.likes}
-          comments={trip.comments}
-          onCommentsClick={() => {
-            console.log('comments click');
-          }}
-        />
-
-        <CommentBlock tripId={trip.id} />
-      </div>
 
       <Modal
         isOpen={!!tripToDelete}
