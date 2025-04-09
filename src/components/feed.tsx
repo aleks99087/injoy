@@ -392,10 +392,9 @@ export function Feed() {
                         </button>
                         <button
                           onClick={() => {
-                            const baseUrl = "https://injoy-ten.vercel.app";
-                            const tripUrl = `${baseUrl}/trips/${trip.id}`;
-                            navigator.clipboard.writeText(tripUrl);
-                            setCopiedTripUrl(tripUrl);
+                            const shareUrl = `https://functions.yandexcloud.net/d4etklk1qgrtvu71maeu?id=${trip.id}`;
+                            navigator.clipboard.writeText(shareUrl);
+                            setCopiedTripUrl(shareUrl);
                             setShowShareMenu(null);
                           }}
                           className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
