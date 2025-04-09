@@ -417,33 +417,32 @@ export function Feed() {
                   <div className="p-4">
                     <div className="flex justify-between items-start">
                       <h2 className="text-lg font-semibold">{trip.title}</h2>
-                      {trip.country && (
-                        <div className="flex items-center text-gray-500 text-sm">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {trip.country}
-                        </div>
-                      )}
-                    </div>
-                    {trip.user_id === currentUserId && !trip.is_public && (
-                      <div className="mt-2 inline-flex items-center text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-1">
-                        🔒 Достпно только вам
+
+                      <div className="flex items-center text-sm text-gray-500">
+                        {trip.country && (
+                          <div className="flex items-center">
+                            <MapPin className="w-4 h-4 mr-1" />
+                            {trip.country}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div className="mt-2 flex items-center text-sm text-gray-500">
-                      <span>by Test User</span>
-                      <span className="mx-2">•</span>
-                      <span>{new Date(trip.created_at).toLocaleDateString()}</span>
                     </div>
 
-                    <div className="mt-3 flex items-center space-x-4">
-                      <LikeButton tripId={trip.id} initialCount={trip.likes} userId={currentUserId} />
-                      <button
-                        className="flex items-center text-gray-600"
-                        onClick={() => toggleComments(trip.id)}
-                      >
-                        <MessageCircle className="w-5 h-5 mr-1" />
-                        <span>{trip.comments}</span>
-                      </button>
+                    <div className="mt-3 flex justify-between items-center text-sm text-gray-500">
+                      <div className="flex items-center space-x-4">
+                        <LikeButton tripId={trip.id} initialCount={trip.likes} userId={currentUserId} />
+                        <button
+                          className="flex items-center text-gray-600"
+                          onClick={() => toggleComments(trip.id)}
+                        >
+                          <MessageCircle className="w-5 h-5 mr-1" />
+                          <span>{trip.comments}</span>
+                        </button>
+                      </div>
+
+                      <div className="text-xs text-gray-400">
+                        by Test User • {new Date(trip.created_at).toLocaleDateString()}
+                      </div>
                     </div>
 
                     {expandedComments === trip.id && (

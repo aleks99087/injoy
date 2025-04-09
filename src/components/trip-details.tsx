@@ -1,13 +1,14 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Menu } from 'lucide-react';
+import { ChevronLeft, Menu, Share2 } from 'lucide-react';
 import { useKeenSlider } from 'keen-slider/react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import "keen-slider/keen-slider.min.css";
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 import { MapSelector } from './create-trip/map-selector';
-import { useStickyHeader } from '../lib/useStickyHeader';
+import { Modal } from './ui/modal';
+import { TripFooter } from './ui/trip-footer';
+import { CommentBlock } from './ui/comment-block';
 
 type Trip = {
   id: string;
@@ -17,6 +18,8 @@ type Trip = {
   country: string | null;
   user_id: string;
   created_at: string;
+  comments: number;
+  likes: number; 
 };
 
 type Point = {
@@ -40,6 +43,13 @@ type PointImage = {
   order: number;
 };
 
+type Comment = {
+  id: string;
+  text: string;
+  user_id: string;
+  created_at: string;
+};
+
 const ANIMATION_DURATION = 500;
 const MAX_HEADER_HEIGHT = 400;
 const MIN_HEADER_HEIGHT = 200;
@@ -58,7 +68,13 @@ export function TripDetails() {
   const headerRef = useRef<HTMLDivElement>(null);
   const headerImageRef = useRef<HTMLImageElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  
+  const [showContextMenu, setShowContextMenu] = useState<boolean>(false);
+  const [tripToDelete, setTripToDelete] = useState<Trip | null>(null);
+  const [showShareMenu, setShowShareMenu] = useState<boolean>(false);
+  const [copiedTripUrl, setCopiedTripUrl] = useState<string | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+
+
 
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
     initial: 0,
@@ -101,6 +117,15 @@ export function TripDetails() {
   
       ticking = false;
     };
+
+    const handleDelete = async (tripId: string) => {
+      try {
+        await supabase.from('trips').delete().eq('id', tripId);
+        navigate('/feed'); // или другой роут, если нужно
+      } catch (err) {
+        console.error('Ошибка при удалении маршрута:', err);
+      }
+    };    
   
     const onScroll = () => {
       if (!ticking) {
@@ -191,6 +216,25 @@ export function TripDetails() {
   }, [id]);
 
   useEffect(() => {
+    const loadComments = async () => {
+      if (!trip?.id) return;
+      const { data, error } = await supabase
+        .from('trip_comments')
+        .select('*')
+        .eq('trip_id', trip.id)
+        .order('created_at', { ascending: true });
+  
+      if (error) {
+        console.error('Ошибка загрузки комментариев:', error);
+      } else {
+        setComments(data || []);
+      }
+    };
+  
+    loadComments();
+  }, [trip?.id]);  
+
+  useEffect(() => {
     if (showMap) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -278,6 +322,7 @@ export function TripDetails() {
         <div className="trip-header-controls">
           <div className="absolute top-4 left-0 right-0 px-4">
             <div className="flex justify-between items-center text-white max-w-4xl mx-auto">
+              {/* Кнопка Назад */}
               <button
                 onClick={() => navigate('/feed')}
                 className="p-2 rounded-full bg-black/30 hover:bg-black/40 transition-colors"
@@ -285,27 +330,90 @@ export function TripDetails() {
                 <ChevronLeft className="w-6 h-6" />
               </button>
 
-              {/* Trip Title with Semi-Transparent Background and Rounded Corners */}
-              <div className="px-4 py-1 bg-black/30 rounded-full">
-                <h1 className="text-xl font-bold text-white text-center truncate">
-                  {trip.title}
-                </h1>
-              </div>
+              {/* Справа: Поделиться и Бургер */}
+              <div className="flex space-x-2">
+                {/* Поделиться */}
+                <button
+                  onClick={() => setShowShareMenu(!showShareMenu)}
+                  className="p-2 rounded-full bg-black/30 hover:bg-black/40 transition-colors"
+                >
+                  <Share2 className="w-6 h-6" /> {/* Adjusted size to match feed */}
+                </button>
 
-              <button className="p-2 rounded-full bg-black/30 hover:bg-black/40 transition-colors">
-                <Menu className="w-6 h-6" />
-              </button>
+                {/* Бургер-кнопка — показываем всегда (пока нет авторизации) */}
+                <button
+                  onClick={() => setShowContextMenu(!showContextMenu)}
+                  className="p-2 rounded-full bg-black/30 hover:bg-black/40 transition-colors"
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+              </div>
             </div>
           </div>
 
+          {showShareMenu && (
+            <div className="absolute top-16 right-4 bg-white rounded-lg shadow-lg p-2 z-50">
+              <button
+                onClick={() => {
+                  const version = Date.now();
+                  const shareUrl = `https://functions.yandexcloud.net/d4etklk1qgrtvu71maeu?id=${trip.id}&v=${version}`;
+                  const caption = `${trip.title} — маршрут в INJOY`;
+                  window.open(
+                    `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(caption)}`
+                  );
+                  setShowShareMenu(false);
+                }}
+                className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
+              >
+                Поделиться в Telegram
+              </button>
+              <button
+                onClick={() => {
+                  const shareUrl = `https://functions.yandexcloud.net/d4etklk1qgrtvu71maeu?id=${trip.id}`;
+                  navigator.clipboard.writeText(shareUrl);
+                  setCopiedTripUrl(shareUrl);
+                  setShowShareMenu(false);
+                }}
+                className="block w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
+              >
+                Скопировать ссылку
+              </button>
+            </div>
+          )}
+
+          {showContextMenu && (
+            <div className="absolute top-16 right-4 bg-white rounded-lg shadow-lg p-2 z-50">
+              <button
+                onClick={() => {
+                  setTripToDelete(trip);
+                  setShowContextMenu(false);
+                }}
+                className="block w-full text-left px-4 py-2 text-red-500 hover:bg-red-50 rounded"
+              >
+                Удалить
+              </button>
+            </div>
+          )}
+
           <div className="absolute bottom-20 left-0 right-0 px-4">
-            <div className="inline-block text-white px-2 py-1 rounded-md bg-gradient-to-r from-black/50 to-black/20 max-w-[80%]">
-              <div className="text-lg font-medium tracking-wide">{trip.country}</div>
+            <div className="flex flex-col items-start gap-0.5 max-w-[90%]">
+              {trip.title && (
+                <div className="bg-black/40 text-white px-3 py-1 rounded-full text-base font-semibold truncate">
+                  {trip.title}
+                </div>
+              )}
+
+              {(trip.country || trip.location) && (
+                <div className="bg-black/30 text-white/80 px-3 py-1 rounded-full text-sm truncate">
+                  {trip.country || ''}
+                  {trip.location && `, ${trip.location.split(',')[0]}`}
+                </div>
+              )}
             </div>
           </div>
 
           <div className="absolute bottom-4 left-0 right-0 px-4">
-            <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2">
+            <div className="flex items-center justify-start gap-2 overflow-x-auto pb-2 pl-2">
               {points.map((_, index) => (
                 <button
                   key={index}
@@ -318,7 +426,7 @@ export function TripDetails() {
                   )}
                 >
                   <span className="font-bold">
-                    {currentSlide === index ? `${index + 1} место` : index + 1}
+                    {currentSlide === index ? `${index + 1} локация` : index + 1}
                   </span>
                 </button>
               ))}
@@ -327,7 +435,7 @@ export function TripDetails() {
         </div>
       </div>
 
-      <div className="trip-content overflow-y-auto" ref={contentRef}>
+      <div className="trip-content overflow-y-auto pb-20" ref={contentRef}>
         {points.length > 0 && (
           <div ref={sliderRef} key={points.length} className="keen-slider">
             {points.map((point) => (
@@ -338,7 +446,7 @@ export function TripDetails() {
                   <div className="grid grid-cols-2 gap-4 items-start mb-6">
                     <div>
                       <div className="text-sm text-gray-500 mb-1 h-[20px]">
-                        {point.rating ? 'Моя оценка места' : 'Поставь оценку'}
+                        {point.rating ? 'Моя оценка' : 'Поставь оценку'}
                       </div>
                       <div className="flex space-x-1">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -443,6 +551,45 @@ export function TripDetails() {
           />
         </div>
       )}
+
+      <div className="bg-white border-t mt-8">
+        <TripFooter
+          tripId={trip.id}
+          userId={trip.user_id}
+          createdAt={trip.created_at}
+          likes={trip.likes}
+          comments={trip.comments}
+          onCommentsClick={() => {
+            console.log('comments click');
+          }}
+        />
+
+        <CommentBlock tripId={trip.id} />
+      </div>
+
+      <Modal
+        isOpen={!!tripToDelete}
+        onClose={() => setTripToDelete(null)}
+        onConfirm={() => {
+          handleDelete(tripToDelete!.id);
+          setTripToDelete(null);
+        }}
+        title="Удаление поездки"
+        description="Вы уверены, что хотите удалить эту поездку? Это действие нельзя будет отменить."
+        confirmText="Удалить"
+        cancelText="Отмена"
+        type="danger"
+      />
+
+      <Modal
+        isOpen={!!copiedTripUrl}
+        onClose={() => setCopiedTripUrl(null)}
+        onConfirm={() => setCopiedTripUrl(null)}
+        title="Ссылка скопирована"
+        description="Вы можете вставить её в чат, заметки или сохранить себе"
+        confirmText="Ок"
+        cancelText=""
+      />
     </div>
   );
 }
