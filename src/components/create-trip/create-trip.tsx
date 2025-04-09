@@ -332,7 +332,7 @@ export function CreateTrip() {
             <ChevronLeft className="w-6 h-6" />
           </button>
           <h1 className="text-xl font-semibold flex-1 text-center">
-            {step === 'trip' ? 'Новая поездка' : `Точка маршрута ${step}`}
+            {step === 'trip' ? 'Новый маршрут' : `Точка маршрута ${step}`}
           </h1>
           {step !== 'trip' && (
             <button
