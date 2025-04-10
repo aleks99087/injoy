@@ -11,20 +11,31 @@ export function SplashScreen() {
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-web-app.js';
+    script.async = true;
+  
+    script.onload = () => {
+      const tgInstance = window.Telegram?.WebApp;
+  
+      if (!tgInstance) {
+        setDebugInfo('❌ Telegram WebApp API не загружен');
+        return;
+      }
+  
+      tgInstance.ready();
+      tgInstance.expand();
+  
       setIsAnimating(false);
-
-      const user = tg.getUser();
-
-      // 👁 Отладка: показываем всё, что прилетает из Telegram WebApp
+  
+      const user = tgInstance.initDataUnsafe?.user;
+  
       setDebugInfo(JSON.stringify({
-        hasTelegram: !!window.Telegram?.WebApp,
-        initData: window.Telegram?.WebApp?.initData,
-        initDataUnsafe: window.Telegram?.WebApp?.initDataUnsafe,
+        hasTelegram: !!tgInstance,
+        initData: tgInstance.initData,
         user: user ?? null
       }, null, 2));
-
-      // 🧠 Сохраняем user в Supabase, если он есть
+  
       if (user) {
         supabase.from('users').upsert({
           id: user.id.toString(),
@@ -37,42 +48,34 @@ export function SplashScreen() {
           if (error) console.error('Ошибка сохранения пользователя:', error);
           else console.log('✅ Пользователь сохранён:', user.id);
         });
+  
+        setDebugUserId(user.id.toString());
       } else {
-        console.warn('⛔️ Telegram user не найден!');
+        console.warn('⛔️ Данные пользователя не найдены в initDataUnsafe');
       }
-
-      // ⏳ Ждём 5 секунд перед переходом
+  
+      // ⏳ Переход через 5 сек
       setTimeout(() => {
-        const startParam = tg.getStartParam();
+        const startParam = tgInstance.initDataUnsafe?.start_param;
         const tripId = startParam?.startsWith('trip_')
           ? startParam.replace('trip_', '')
           : null;
-
+  
         if (tripId) {
           navigate(`/trips/${tripId}`);
         } else {
           navigate('/feed');
         }
       }, 5000);
-
-      // доп. таймер для выхода после анимации
-      //setTimeout(() => {
-        //const startParam = tg.getStartParam();
-      
-        //const tripId = startParam?.startsWith('trip_')
-          //? startParam.replace('trip_', '')
-          //: null;
-      
-        //if (tripId) {
-          //navigate(`/trips/${tripId}`);
-        //} else {
-          //navigate('/feed');
-        //}
-      //}, 2500);      
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    };
+  
+    document.head.appendChild(script);
+  
+    return () => {
+      document.head.removeChild(script);
+    };
   }, [navigate]);
+  
 
   return (
     <div 
