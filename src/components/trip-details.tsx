@@ -10,6 +10,7 @@ import { Modal } from './ui/modal';
 import { TripFooter } from './ui/trip-footer';
 import { CommentBlock } from './ui/comment-block';
 import { LikeButton } from './ui/like-button';
+import { tg } from '../lib/telegram';
 
 type Trip = {
   id: string;
