@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tg } from '../lib/telegram'; // проверь путь, может быть другим
+import { supabase } from '../lib/supabase';
 
 export function SplashScreen() {
   const navigate = useNavigate();
@@ -9,6 +10,21 @@ export function SplashScreen() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsAnimating(false);
+
+      // сохраняем пользователя
+      const user = tg.getUser();
+      if (user) {
+        supabase.from('users').upsert({
+          id: user.id.toString(),
+          username: user.username,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          language_code: user.language_code,
+          photo_url: user.photo_url
+        }).then(({ error }) => {
+          if (error) console.error('Ошибка сохранения пользователя:', error);
+        });
+      }
 
       // доп. таймер для выхода после анимации
       setTimeout(() => {
