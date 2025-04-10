@@ -168,11 +168,8 @@ export function Feed() {
       const { data, error } = await supabase
         .from('trip_comments')
         .select(`
-          id,
-          text,
-          created_at,
-          user_id,
-          user:users (
+          id, text, created_at, user_id,
+          users (
             first_name,
             last_name,
             photo_url
@@ -183,26 +180,18 @@ export function Feed() {
   
       if (error) throw error;
   
-      const normalizedData = (data || []).map((comment) => {
-        const user = comment.user as any;
-        const rawUrl = user?.photo_url as string | undefined;
-        const photo_url = rawUrl?.endsWith('.svg') ? rawUrl.replace('.svg', '.jpg') : rawUrl;
-      
-        return {
+      // Явно сохраняем users
+      setComments(prev => ({
+        ...prev,
+        [tripId]: (data || []).map((comment) => ({
           ...comment,
-          user: {
-            ...user,
-            photo_url,
-          },
-        };
-      });      
-  
-      setComments(prev => ({ ...prev, [tripId]: normalizedData }));
+          users: comment.users
+        }))
+      }));
     } catch (err) {
       console.error('Error loading comments:', err);
     }
-  };
-    
+  };  
 
   const handleDelete = async (tripId: string) => {
     setTripToDelete(tripId);
@@ -251,10 +240,10 @@ export function Feed() {
 
   const handleSubmitComment = async (tripId: string) => {
     if (!newComment.trim() || submittingComment) return;
-
+  
     try {
       setSubmittingComment(true);
-
+  
       const { data, error } = await supabase
         .from('trip_comments')
         .insert({
@@ -262,46 +251,53 @@ export function Feed() {
           user_id: currentUserId,
           text: newComment.trim()
         })
-        .select()
+        .select(`
+          id, text, created_at, user_id,
+          users (
+            first_name,
+            last_name,
+            photo_url
+          )
+        `)
         .single();
-
+  
       if (error) throw error;
-
-      // Update comments state
+  
+      // Добавляем в comments c users
       setComments(prev => ({
         ...prev,
-        [tripId]: [...(prev[tripId] || []), data]
+        [tripId]: [...(prev[tripId] || []), { ...data, users: data.users }]
       }));
-
-      // Update trip comments count
+  
+      // Обновляем счетчик комментов в trips
       const trip = trips.find(t => t.id === tripId);
       if (trip) {
         await supabase
           .from('trips')
           .update({ comments: (trip.comments || 0) + 1 })
           .eq('id', tripId);
-
+  
         setTrips(prev =>
           prev.map(t =>
             t.id === tripId ? { ...t, comments: (t.comments || 0) + 1 } : t
           )
         );
       }
-
+  
       setNewComment('');
       setTimeout(() => {
         commentContainerRef.current?.scrollTo({
           top: commentContainerRef.current.scrollHeight,
           behavior: 'smooth'
         });
-      }, 100);      
+      }, 100);
     } catch (err) {
       console.error('Error submitting comment:', err);
       alert('Failed to submit comment');
     } finally {
       setSubmittingComment(false);
     }
-  };
+  };  
 
   if (error) {
     return (
