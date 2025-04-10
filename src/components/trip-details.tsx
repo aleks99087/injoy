@@ -228,7 +228,7 @@ export function TripDetails() {
       if (!trip?.id) return;
       const { data, error } = await supabase
         .from('trip_comments')
-        .select('id, text, created_at, user_id, users ( first_name, last_name, photo_url )')
+        .select('*')
         .eq('trip_id', trip.id)
         .order('created_at', { ascending: true });
   

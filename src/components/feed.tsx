@@ -24,6 +24,11 @@ type Comment = {
   text: string;
   user_id: string;
   created_at: string;
+  user?: {
+    first_name?: string;
+    last_name?: string;
+    photo_url?: string;
+  };
 };
 
 type ViewMode = 'all' | 'personal';
@@ -162,7 +167,7 @@ export function Feed() {
     try {
       const { data, error } = await supabase
         .from('trip_comments')
-        .select('id, text, created_at, user_id, users ( first_name, last_name, photo_url )')
+        .select('id, text, created_at, user_id, user:users(first_name, last_name, photo_url)')
         .eq('trip_id', tripId)
         .order('created_at', { ascending: true });
 
@@ -511,13 +516,11 @@ export function Feed() {
                           {comments[trip.id]?.map((comment) => (
                             <div key={comment.id} className="flex items-start gap-3">
                               <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
-                              {typeof comment.user_id === 'string' && comment.user_id.length > 0
-                                ? comment.user_id[0].toUpperCase()
-                                : 'U'}
+                              {(comment.user?.first_name?.[0] || '') + (comment.user?.last_name?.[0] || '') || 'A'}
                               </div>
                               <div>
                                 <div className="text-sm text-gray-800 font-semibold">
-                                {typeof comment.user_id === 'string' ? comment.user_id.slice(0, 6) : 'user'}
+                                {`${comment.user?.first_name || ''} ${comment.user?.last_name || ''}`.trim() || 'Аноним'}
                                 </div>
                                 <div className="text-sm text-gray-600">{comment.text}</div>
                                 <div className="text-xs text-gray-400 mt-1">

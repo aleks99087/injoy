@@ -8,7 +8,7 @@ type Comment = {
   text: string;
   user_id: string;
   created_at: string;
-  user?: {
+  users?: {
     first_name?: string;
     last_name?: string;
     photo_url?: string;
@@ -31,7 +31,7 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
   const loadComments = async () => {
     const { data, error } = await supabase
       .from('trip_comments')
-      .select('*, user:users(id, first_name, last_name, photo_url)')
+      .select('*, users(id, first_name, last_name, photo_url)')
       .eq('trip_id', tripId)
       .order('created_at', { ascending: true });
 
@@ -106,14 +106,14 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
           ) : (
             <div className="space-y-4 h-[200px] overflow-y-auto pr-1 mb-4">
               {comments.map((comment) => {
-                const initials = (comment.user?.first_name?.[0] || '') + (comment.user?.last_name?.[0] || '');
-                const fullName = `${comment.user?.first_name || ''} ${comment.user?.last_name || ''}`.trim();
+                const initials = (comment.users?.first_name?.[0] || '') + (comment.users?.last_name?.[0] || '');
+                const fullName = `${comment.users?.first_name || ''} ${comment.users?.last_name || ''}`.trim();
 
                 return (
                   <div key={comment.id} className="flex items-start gap-2">
-                    {comment.user?.photo_url ? (
+                    {comment.users?.photo_url ? (
                       <img
-                        src={comment.user.photo_url}
+                        src={comment.users.photo_url}
                         alt="avatar"
                         className="w-8 h-8 rounded-full object-cover"
                       />
