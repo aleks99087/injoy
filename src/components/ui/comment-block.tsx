@@ -63,7 +63,7 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
           user_id: currentUserId,
           text: newComment.trim(),
         })
-        .select('*, user:users(id, first_name, last_name, photo_url)')
+        .select('*, users(id, first_name, last_name, photo_url)')
         .single();
 
       if (error) throw error;

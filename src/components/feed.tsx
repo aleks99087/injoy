@@ -167,16 +167,42 @@ export function Feed() {
     try {
       const { data, error } = await supabase
         .from('trip_comments')
-        .select('id, text, created_at, user_id, user:users(first_name, last_name, photo_url)')
+        .select(`
+          id,
+          text,
+          created_at,
+          user_id,
+          user:users (
+            first_name,
+            last_name,
+            photo_url
+          )
+        `)
         .eq('trip_id', tripId)
         .order('created_at', { ascending: true });
-
+  
       if (error) throw error;
-      setComments(prev => ({ ...prev, [tripId]: data || [] }));
+  
+      const normalizedData = (data || []).map((comment) => {
+        const user = comment.user as any;
+        const rawUrl = user?.photo_url as string | undefined;
+        const photo_url = rawUrl?.endsWith('.svg') ? rawUrl.replace('.svg', '.jpg') : rawUrl;
+      
+        return {
+          ...comment,
+          user: {
+            ...user,
+            photo_url,
+          },
+        };
+      });      
+  
+      setComments(prev => ({ ...prev, [tripId]: normalizedData }));
     } catch (err) {
       console.error('Error loading comments:', err);
     }
   };
+    
 
   const handleDelete = async (tripId: string) => {
     setTripToDelete(tripId);
