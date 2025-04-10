@@ -8,7 +8,7 @@ type Comment = {
   text: string;
   user_id: string;
   created_at: string;
-  users?: {
+  user: {
     first_name?: string;
     last_name?: string;
     photo_url?: string;
@@ -31,14 +31,14 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
   const loadComments = async () => {
     const { data, error } = await supabase
       .from('trip_comments')
-      .select('*, users(id, first_name, last_name, photo_url)')
+      .select('id, text, created_at, user_id, user:users(first_name, last_name, photo_url)')
       .eq('trip_id', tripId)
       .order('created_at', { ascending: true });
 
     if (error) {
       console.error('Ошибка загрузки комментариев:', error);
     } else {
-      setComments(data || []);
+      setComments((data as Comment[]) || []);
     }
   };
 
@@ -55,7 +55,7 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
     if (!newComment.trim()) return;
     try {
       setSubmitting(true);
-  
+
       const { data, error } = await supabase
         .from('trip_comments')
         .insert({
@@ -63,20 +63,19 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
           user_id: currentUserId,
           text: newComment.trim(),
         })
-        .select('*, users(id, first_name, last_name, photo_url)')
+        .select('id, text, created_at, user_id, user:users(first_name, last_name, photo_url)')
         .single();
-  
+
       if (error) throw error;
-  
-      // 🔧 Явно мержим users
-      setComments((prev) => [...prev, { ...data, users: data.users }]);
+
+      setComments((prev) => [...prev, data as Comment]);
       setNewComment('');
     } catch (err) {
       console.error('Ошибка отправки комментария:', err);
     } finally {
       setSubmitting(false);
     }
-  };  
+  };
 
   return (
     <div className="px-4 py-4 text-sm text-gray-700 border-t bg-white">
@@ -107,14 +106,14 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
           ) : (
             <div className="space-y-4 h-[200px] overflow-y-auto pr-1 mb-4">
               {comments.map((comment) => {
-                const initials = (comment.users?.first_name?.[0] || '') + (comment.users?.last_name?.[0] || '');
-                const fullName = `${comment.users?.first_name || ''} ${comment.users?.last_name || ''}`.trim();
+                const initials = (comment.user?.first_name?.[0] || '') + (comment.user?.last_name?.[0] || '');
+                const fullName = `${comment.user?.first_name || ''} ${comment.user?.last_name || ''}`.trim();
 
                 return (
                   <div key={comment.id} className="flex items-start gap-2">
-                    {comment.users?.photo_url ? (
+                    {comment.user?.photo_url ? (
                       <img
-                        src={comment.users.photo_url}
+                        src={comment.user.photo_url}
                         alt="avatar"
                         className="w-8 h-8 rounded-full object-cover"
                       />
