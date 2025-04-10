@@ -333,29 +333,39 @@ export function TripDetails() {
 
   const handleSubmitComment = async (tripId: string) => {
     if (!newComment.trim()) return;
-
+  
     setSubmittingComment(true);
-
+  
     try {
       const { data, error } = await supabase
         .from('trip_comments')
         .insert({ trip_id: tripId, text: newComment, user_id })
-        .select()
+        .select(`
+          id, text, created_at, user_id,
+          user:users (
+            first_name,
+            last_name,
+            photo_url
+          )
+        `)
         .single();
-
+  
       if (error) throw error;
-
+  
       if (data) {
         setComments((prev) => ({
           ...prev,
-          [tripId]: [...(prev[tripId] || []), data],
+          [tripId]: [...(prev[tripId] || []), data as Comment],
         }));
+  
         await supabase
           .from('trips')
           .update({ comments: (tripComments || 0) + 1 })
           .eq('id', tripId);
+  
         setTripComments((prev) => prev + 1);
-      }      
+      }
+  
       setNewComment('');
       setTimeout(() => {
         commentsContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -365,7 +375,7 @@ export function TripDetails() {
     } finally {
       setSubmittingComment(false);
     }
-  };
+  };  
 
   if (loading) {
     return (
