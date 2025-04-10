@@ -8,6 +8,11 @@ type Comment = {
   text: string;
   user_id: string;
   created_at: string;
+  user?: {
+    first_name?: string;
+    last_name?: string;
+    photo_url?: string;
+  };
 };
 
 type CommentBlockProps = {
@@ -21,12 +26,12 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
   const [submitting, setSubmitting] = useState(false);
 
   const currentUserId = tg.getUser()?.id.toString() || 'anonymous';
-  const inputRef = useRef<HTMLTextAreaElement>(null); // Реф для поля ввода
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const loadComments = async () => {
     const { data, error } = await supabase
       .from('trip_comments')
-      .select('*')
+      .select('*, user:users(id, first_name, last_name, photo_url)')
       .eq('trip_id', tripId)
       .order('created_at', { ascending: true });
 
@@ -40,7 +45,6 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
   useEffect(() => {
     if (expanded) {
       loadComments();
-      // Прокручиваем к полю ввода комментария
       setTimeout(() => {
         inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 100);
@@ -59,7 +63,7 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
           user_id: currentUserId,
           text: newComment.trim(),
         })
-        .select()
+        .select('*, user:users(id, first_name, last_name, photo_url)')
         .single();
 
       if (error) throw error;
@@ -101,35 +105,49 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
             <div className="text-gray-400 italic">Пока нет комментариев</div>
           ) : (
             <div className="space-y-4 h-[200px] overflow-y-auto pr-1 mb-4">
-              {/* Increased max-height to 300px */}
-              {comments.map((comment) => (
-                <div key={comment.id}>
-                  <div className="text-sm text-gray-800 font-semibold">
-                    {comment.user_id?.slice(0, 6) || 'anonym'}
+              {comments.map((comment) => {
+                const initials = (comment.user?.first_name?.[0] || '') + (comment.user?.last_name?.[0] || '');
+                const fullName = `${comment.user?.first_name || ''} ${comment.user?.last_name || ''}`.trim();
+
+                return (
+                  <div key={comment.id} className="flex items-start gap-2">
+                    {comment.user?.photo_url ? (
+                      <img
+                        src={comment.user.photo_url}
+                        alt="avatar"
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-medium">
+                        {initials || 'A'}
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-gray-800">{fullName || 'Аноним'}</div>
+                      <div className="text-gray-700">{comment.text}</div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(comment.created_at).toLocaleString()}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-gray-700">{comment.text}</div>
-                  <div className="text-xs text-gray-400">
-                    {new Date(comment.created_at).toLocaleString()}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
-          {/* Fixed height for input and button */}
           <div className="sticky bottom-0 bg-white pt-2">
             <textarea
-              ref={inputRef} // Привязываем реф к полю ввода
+              ref={inputRef}
               rows={2}
               placeholder="Напишите комментарий..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              className="w-full p-2 border rounded-lg text-sm h-[60px]" // Fixed height for textarea
+              className="w-full p-2 border rounded-lg text-sm h-[60px]"
             />
             <button
               onClick={handleSubmit}
               disabled={submitting || !newComment.trim()}
-              className="mt-2 w-full bg-[#FA5659] text-white rounded-lg py-2 hover:bg-[#E04E51] disabled:opacity-50 h-[40px]" // Fixed height for button
+              className="mt-2 w-full bg-[#FA5659] text-white rounded-lg py-2 hover:bg-[#E04E51] disabled:opacity-50 h-[40px]"
             >
               Отправить
             </button>

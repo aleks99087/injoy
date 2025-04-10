@@ -1,20 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Heart } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { tg } from '../../lib/telegram';
 
 type LikeButtonProps = {
   tripId: string;
   initialCount: number;
-  userId: string;
 };
 
-export function LikeButton({ tripId, initialCount, userId }: LikeButtonProps) {
+export function LikeButton({ tripId, initialCount }: LikeButtonProps) {
   const [likes, setLikes] = useState(initialCount);
   const [liked, setLiked] = useState(false);
   const [loading, setLoading] = useState(false);
+  const userId = tg.getUserId() || 'anonymous';
 
   useEffect(() => {
     const checkLiked = async () => {
+      if (!userId) return;
       const { data } = await supabase
         .from('trip_likes')
         .select('id')
@@ -29,12 +31,11 @@ export function LikeButton({ tripId, initialCount, userId }: LikeButtonProps) {
   }, [tripId, userId]);
 
   const toggleLike = async () => {
-    if (loading) return;
+    if (loading || !userId) return;
     setLoading(true);
 
     try {
       if (liked) {
-        // Удаляем лайк
         await supabase
           .from('trip_likes')
           .delete()
@@ -49,7 +50,6 @@ export function LikeButton({ tripId, initialCount, userId }: LikeButtonProps) {
         setLikes((prev) => prev - 1);
         setLiked(false);
       } else {
-        // Добавляем лайк
         await supabase
           .from('trip_likes')
           .insert({ trip_id: tripId, user_id: userId });
