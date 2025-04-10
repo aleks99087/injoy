@@ -56,19 +56,19 @@ export function SplashScreen() {
       }, 5000);
 
       // доп. таймер для выхода после анимации
-      setTimeout(() => {
-        const startParam = tg.getStartParam();
+      //setTimeout(() => {
+        //const startParam = tg.getStartParam();
       
-        const tripId = startParam?.startsWith('trip_')
-          ? startParam.replace('trip_', '')
-          : null;
+        //const tripId = startParam?.startsWith('trip_')
+          //? startParam.replace('trip_', '')
+          //: null;
       
-        if (tripId) {
-          navigate(`/trips/${tripId}`);
-        } else {
-          navigate('/feed');
-        }
-      }, 2500);      
+        //if (tripId) {
+          //navigate(`/trips/${tripId}`);
+        //} else {
+          //navigate('/feed');
+        //}
+      //}, 2500);      
     }, 3000);
 
     return () => clearTimeout(timer);
