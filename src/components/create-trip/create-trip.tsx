@@ -216,8 +216,7 @@ export function CreateTrip() {
         return;
       }
 
-      const telegramUser = tg.getUser();
-      const userId = telegramUser?.id.toString() || '00000000-0000-0000-0000-000000000001';
+      const userId = tg.getUserId() || '00000000-0000-0000-0000-000000000001';
 
       let mainPhotoUrl = null;
       if (tripData.mainPhoto) {
