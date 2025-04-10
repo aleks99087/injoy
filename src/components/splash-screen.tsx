@@ -3,17 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { tg } from '../lib/telegram'; // проверь путь, может быть другим
 import { supabase } from '../lib/supabase';
 
+
 export function SplashScreen() {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(true);
+  const [debugUserId, setDebugUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsAnimating(false);
 
-      // сохраняем пользователя
       const user = tg.getUser();
       if (user) {
+        setDebugUserId(user.id.toString()); // ⚠️ выведем на экран
+
+        // 🔁 сохраняем в БД
         supabase.from('users').upsert({
           id: user.id.toString(),
           username: user.username,
@@ -24,6 +28,8 @@ export function SplashScreen() {
         }).then(({ error }) => {
           if (error) console.error('Ошибка сохранения пользователя:', error);
         });
+      } else {
+        console.warn('Telegram user не найден!');
       }
 
       // доп. таймер для выхода после анимации
@@ -83,6 +89,12 @@ export function SplashScreen() {
           </p>
         </div>
       </div>
+      {/* ✅ Отладочный вывод user_id */}
+      {debugUserId && (
+        <div className="absolute bottom-4 left-4 text-white text-sm bg-black/50 px-3 py-1 rounded-lg">
+          user_id: {debugUserId}
+        </div>
+      )}
     </div>
   );
 }
