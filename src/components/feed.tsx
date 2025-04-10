@@ -46,7 +46,7 @@ export function Feed() {
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedTripUrl, setCopiedTripUrl] = useState<string | null>(null);
   const commentContainerRef = useRef<HTMLDivElement>(null);
-  const currentUserId = tg.getUser()?.id.toString() || '';
+  const currentUserId = tg.getUser()?.id ? tg.getUser()!.id.toString() : null;
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
 
@@ -56,14 +56,19 @@ export function Feed() {
   }, [selectedYear, viewMode, searchQuery]);
 
   const loadTrips = async () => {
-    setDebugInfo(`⏳ Загрузка...\ncurrentUserId: ${currentUserId}\nviewMode: ${viewMode}`);
+    const user = tg.getUser();
+    const currentUserId = user?.id ? user.id.toString() : null;
+  
+    setDebugInfo(
+      `⏳ Загрузка...\ncurrentUserId: ${currentUserId || '[пусто]'}\nviewMode: ${viewMode}`
+    );
   
     // ⛔️ Если личные маршруты, но нет user_id — не делаем запрос
     if (viewMode === 'personal' && !currentUserId) {
       setTrips([]);
       setLoading(false);
       setError(null);
-      setDebugInfo(prev => (prev || '') + '\nℹ️ Пропущен запрос — user_id пустой');
+      setDebugInfo(prev => (prev || '') + '\nℹ️ Пропущен запрос — user_id отсутствует');
       return;
     }
   
@@ -74,7 +79,7 @@ export function Feed() {
         .eq('is_draft', false);
   
       if (viewMode === 'personal') {
-        query = query.eq('user_id', currentUserId);
+        query = query.eq('user_id', currentUserId!); // тут точно есть ID
       } else {
         query = query.eq('is_public', true);
       }
@@ -88,6 +93,7 @@ export function Feed() {
       const { data, error: tripsError } = await query.order('created_at', { ascending: false });
   
       if (tripsError) throw tripsError;
+    
 
       let loadedTrips = data || [];
 
