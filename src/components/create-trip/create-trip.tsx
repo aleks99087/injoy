@@ -23,6 +23,7 @@ export function CreateTrip() {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const MIN_SWIPE_DISTANCE = 50;
+  const mainRef = useRef<HTMLDivElement | null>(null);
 
   const [tripData, setTripData] = useState({
     title: '',
@@ -86,6 +87,14 @@ export function CreateTrip() {
     setStep(1);
   };
 
+  useEffect(() => {
+    if (step !== 'trip') {
+      requestAnimationFrame(() => {
+        mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+  }, [step]);       
+
   const handleLocationSelect = (latlng: LatLng, zoom?: number) => {
     const newPoints = [...points];
     newPoints[currentPointIndex].latitude = latlng.lat;
@@ -111,7 +120,7 @@ export function CreateTrip() {
     const newIndex = newPoints.length - 1;
     setCurrentPointIndex(newIndex);
     setStep(newIndex + 1);
-  };
+  };  
 
   const removePoint = (index: number) => {
     if (points.length <= 1) {
@@ -131,7 +140,7 @@ export function CreateTrip() {
   const switchToPoint = (index: number) => {
     setCurrentPointIndex(index);
     setStep(index + 1);
-  };
+  };  
 
   const nextPoint = () => {
     if (currentPointIndex < points.length - 1) {
@@ -346,8 +355,9 @@ export function CreateTrip() {
         </div>
       </header>
 
-      <main 
-        className="max-w-2xl mx-auto p-4"
+      <main
+        ref={mainRef} //
+        className="max-w-2xl mx-auto p-4 overflow-y-auto max-h-[calc(100vh-56px)]"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}

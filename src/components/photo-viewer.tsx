@@ -22,6 +22,8 @@ export function PhotoViewer() {
   const [images, setImages] = useState<ImageWithPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(initialImageIndex);
+  const [lastPointId, setLastPointId] = useState<string | null>(null);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   const [sliderRef] = useKeenSlider<HTMLDivElement>({
     initial: initialImageIndex,
@@ -33,6 +35,17 @@ export function PhotoViewer() {
       setCurrentSlide(slider.track.details.rel);
     },
   });
+
+  const current = images[currentSlide];
+
+  useEffect(() => {
+    if (current?.point_id !== lastPointId) {
+      setLastPointId(current?.point_id);
+      setShouldAnimate(true);
+      const timeout = setTimeout(() => setShouldAnimate(false), 700); // match animation duration
+      return () => clearTimeout(timeout);
+    }
+  }, [current?.point_id]);
 
   useEffect(() => {
     const loadGallery = async () => {
@@ -109,10 +122,9 @@ export function PhotoViewer() {
     );
   }
 
-  const current = images[currentSlide];
-
   return (
     <div className="fixed inset-0 bg-black">
+      {/* Кнопка "назад" */}
       <button
         onClick={() => navigate(-1)}
         className="absolute top-4 left-4 z-10 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white"
@@ -120,13 +132,19 @@ export function PhotoViewer() {
         <ChevronLeft className="w-6 h-6" />
       </button>
 
-      {/* Название точки */}
-      <div className="absolute top-4 inset-x-0 text-center text-white z-10 pointer-events-none">
-        <h2 className="text-lg font-semibold bg-black/40 px-4 py-1 rounded-full inline-block">
-          {current.point_name}
-        </h2>
+      {/* Индикаторы точек */}
+      <div className="absolute top-8 inset-x-0 flex justify-center gap-1 z-10">
+        {images.map((_, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 rounded-full transition-all duration-200 ${
+              index === currentSlide ? 'bg-[#FA5659]' : 'bg-white/50'
+            }`}
+          />
+        ))}
       </div>
 
+      {/* Слайдер изображений */}
       <div ref={sliderRef} className="keen-slider h-full">
         {images.map((image) => (
           <div key={image.id} className="keen-slider__slide flex justify-center items-center">
@@ -139,33 +157,32 @@ export function PhotoViewer() {
         ))}
       </div>
 
-      {/* Впечатления с градиентом и прокруткой */}
+      {/* Нижний блок с названием и впечатлениями */}
       <div
         className="absolute bottom-0 left-0 right-0 p-4 pt-8 text-white"
         style={{
           background: 'linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.3), transparent)',
-          maxHeight: '35%',
-          overflowY: 'auto',
         }}
       >
-        <h2 className="text-xl font-semibold mb-1">{current.point_name}</h2>
-        {current.impressions && (
-          <p className="text-sm opacity-90 leading-relaxed whitespace-pre-line">
-            {current.impressions}
-          </p>
-        )}
-      </div>
+        <h2
+          key={current.point_name}
+          className="inline-block text-xl font-semibold mb-2 bg-black/40 px-3 py-1 rounded animate-fadeIn"
+        >
+          {current.point_name}
+        </h2>
 
-      {/* Индикатор */}
-      <div className="absolute bottom-28 inset-x-0 flex justify-center gap-1">
-        {images.map((_, index) => (
+        {current.impressions && (
           <div
-            key={index}
-            className={`w-2 h-2 rounded-full transition-all duration-200 ${
-              index === currentSlide ? 'bg-[#FA5659]' : 'bg-white/50'
-            }`}
-          />
-        ))}
+            key={current.point_id + '-impression'}
+            className="bg-black/30 p-2 rounded max-h-32 overflow-y-auto"
+          >
+            <div className="animate-fadeIn">
+              <p className="text-sm opacity-90 leading-relaxed whitespace-pre-line">
+                {current.impressions}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Heart, MessageCircle, Share2, Menu, User, Plus, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -45,6 +45,7 @@ export function Feed() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedTripUrl, setCopiedTripUrl] = useState<string | null>(null);
+  const commentContainerRef = useRef<HTMLDivElement>(null);
 
   const currentUserId = tg.getUser()?.id.toString() || '00000000-0000-0000-0000-000000000001';
 
@@ -220,6 +221,12 @@ export function Feed() {
       }
 
       setNewComment('');
+      setTimeout(() => {
+        commentContainerRef.current?.scrollTo({
+          top: commentContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 100);      
     } catch (err) {
       console.error('Error submitting comment:', err);
       alert('Failed to submit comment');
@@ -458,15 +465,20 @@ export function Feed() {
                           </button>
                         </div>
 
-                        <div className="space-y-4 max-h-[200px] overflow-y-auto pr-1">
+                        <div
+                          ref={commentContainerRef}
+                          className="space-y-4 max-h-[200px] overflow-y-auto pr-1"
+                        >
                           {comments[trip.id]?.map((comment) => (
                             <div key={comment.id} className="flex items-start gap-3">
                               <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
-                                {comment.user_id[0]?.toUpperCase() || 'U'}
+                              {typeof comment.user_id === 'string' && comment.user_id.length > 0
+                                ? comment.user_id[0].toUpperCase()
+                                : 'U'}
                               </div>
                               <div>
                                 <div className="text-sm text-gray-800 font-semibold">
-                                  {comment.user_id.slice(0, 6)}
+                                {typeof comment.user_id === 'string' ? comment.user_id.slice(0, 6) : 'user'}
                                 </div>
                                 <div className="text-sm text-gray-600">{comment.text}</div>
                                 <div className="text-xs text-gray-400 mt-1">

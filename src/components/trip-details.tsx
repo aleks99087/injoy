@@ -79,6 +79,10 @@ export function TripDetails() {
   const [expandedComments, setExpandedComments] = useState<string | null>(null);
   const [newComment, setNewComment] = useState<string>('');
   const [submittingComment, setSubmittingComment] = useState<boolean>(false);
+  const commentsContainerRef = useRef<HTMLDivElement>(null);
+  const user_id = `user_${Math.random().toString(36).slice(2, 8)}`;
+  const commentsEndRef = useRef<HTMLDivElement>(null);
+
 
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
     initial: 0,
@@ -320,16 +324,27 @@ export function TripDetails() {
     try {
       const { data, error } = await supabase
         .from('trip_comments')
-        .insert([{ trip_id: tripId, text: newComment }]);
+        .insert({ trip_id: tripId, text: newComment, user_id })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setComments((prev) => ({
-        ...prev,
-        [tripId]: [...(prev[tripId] || []), data[0]],
-      }));
+      if (data) {
+        setComments((prev) => ({
+          ...prev,
+          [tripId]: [...(prev[tripId] || []), data],
+        }));
+        await supabase
+          .from('trips')
+          .update({ comments: (tripComments || 0) + 1 })
+          .eq('id', tripId);
+        setTripComments((prev) => prev + 1);
+      }      
       setNewComment('');
-      handleCommentAdded();
+      setTimeout(() => {
+        commentsContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err) {
       console.error('Error submitting comment:', err);
     } finally {
@@ -490,7 +505,7 @@ export function TripDetails() {
         </div>
       </div>
 
-      <div className="trip-content overflow-y-auto pb-20" ref={contentRef}>
+      <div className="trip-content overflow-y-auto pb-4" ref={contentRef}>
         {points.length > 0 && (
           <div ref={sliderRef} key={points.length} className="keen-slider">
             {points.map((point) => (
@@ -591,18 +606,23 @@ export function TripDetails() {
           <div className="bg-white border rounded-xl mt-4 p-4 space-y-4">
             <h2 className="text-lg font-semibold">Комментарии</h2>
 
-            <div className="space-y-4 max-h-[250px] overflow-y-auto pr-1">
+            <div
+              ref={commentsContainerRef}
+              className="space-y-4 pr-1"
+            >
             {(comments[trip.id] || []).slice(0, 100).map((comment) => {
               if (!comment || !comment.user_id || !comment.text) return null;
 
               return (
                 <div key={comment.id} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
-                    {(comment.user_id[0] || 'U').toUpperCase()}
+                  {typeof comment.user_id === 'string' && comment.user_id.length > 0
+                    ? comment.user_id[0].toUpperCase()
+                    : 'U'}
                   </div>
                   <div>
                     <div className="text-sm text-gray-800 font-semibold">
-                      {comment.user_id.slice(0, 6)}
+                    {typeof comment.user_id === 'string' ? comment.user_id.slice(0, 6) : 'user'}
                     </div>
                     <div className="text-sm text-gray-600">{comment.text}</div>
                     <div className="text-xs text-gray-400 mt-1">
@@ -612,6 +632,7 @@ export function TripDetails() {
                 </div>
               );
             })}
+            <div ref={commentsEndRef} />
             </div>
 
             <div>

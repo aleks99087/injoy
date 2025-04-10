@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, X, Plus } from 'lucide-react';
 import type { PointInput } from './types';
+
 
 type PointFormProps = {
   point: PointInput;
@@ -9,6 +10,7 @@ type PointFormProps = {
   onAddPoint: () => void;
   onSave: () => void;
   isSaving: boolean;
+  onMount?: () => void;
 };
 
 export function PointForm({ 
@@ -17,7 +19,7 @@ export function PointForm({
   onShowMap, 
   onAddPoint,
   onSave,
-  isSaving 
+  isSaving,
 }: PointFormProps) {
   const handlePhotoSelect = (files: FileList | null) => {
     if (!files) return;
@@ -51,8 +53,8 @@ export function PointForm({
       photos: newPhotos,
       previewUrls: newPreviewUrls
     });
-  };
-
+  }; 
+  
   return (
     <div className="space-y-6">
       <div>

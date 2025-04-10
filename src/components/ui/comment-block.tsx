@@ -12,11 +12,9 @@ type Comment = {
 
 type CommentBlockProps = {
   tripId: string;
-  onExpand?: () => void;
-  onCommentAdded?: () => void; // Callback for when a new comment is added
 };
 
-export function CommentBlock({ tripId, onExpand, onCommentAdded }: CommentBlockProps) {
+export function CommentBlock({ tripId }: CommentBlockProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -42,7 +40,6 @@ export function CommentBlock({ tripId, onExpand, onCommentAdded }: CommentBlockP
   useEffect(() => {
     if (expanded) {
       loadComments();
-      onExpand?.(); // Notify parent component
       // Прокручиваем к полю ввода комментария
       setTimeout(() => {
         inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -69,7 +66,6 @@ export function CommentBlock({ tripId, onExpand, onCommentAdded }: CommentBlockP
 
       setComments((prev) => [...prev, data]);
       setNewComment('');
-      onCommentAdded?.(); // Notify parent component
     } catch (err) {
       console.error('Ошибка отправки комментария:', err);
     } finally {
