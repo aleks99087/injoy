@@ -47,9 +47,9 @@ type PointImage = {
 type Comment = {
   id: string;
   text: string;
-  user_id: string;
   created_at: string;
-  user?: {
+  user_id: string;
+  user: {
     first_name?: string;
     last_name?: string;
     photo_url?: string;
@@ -250,12 +250,15 @@ export function TripDetails() {
       if (error) {
         console.error('Ошибка загрузки комментариев:', error);
       } else {
-        setComments((prev) => ({ ...prev, [trip.id]: data || [] }));
+        setComments((prev) => ({
+          ...prev,
+          [trip.id!]: (data as Comment[]) || []
+        }));
       }
     };
   
     loadComments();
-  }, [trip?.id]);  
+  }, [trip?.id]);   
 
   useEffect(() => {
     if (showMap) {
@@ -333,13 +336,14 @@ export function TripDetails() {
 
   const handleSubmitComment = async (tripId: string) => {
     if (!newComment.trim()) return;
-  
     setSubmittingComment(true);
+  
+    const userId = tg.getUserId();
   
     try {
       const { data, error } = await supabase
         .from('trip_comments')
-        .insert({ trip_id: tripId, text: newComment, user_id })
+        .insert({ trip_id: tripId, text: newComment, user_id: userId })
         .select(`
           id, text, created_at, user_id,
           user:users (
@@ -357,14 +361,14 @@ export function TripDetails() {
           ...prev,
           [tripId]: [...(prev[tripId] || []), data as Comment],
         }));
-  
+      
         await supabase
           .from('trips')
           .update({ comments: (tripComments || 0) + 1 })
           .eq('id', tripId);
-  
+      
         setTripComments((prev) => prev + 1);
-      }
+      }      
   
       setNewComment('');
       setTimeout(() => {
@@ -616,7 +620,7 @@ export function TripDetails() {
 
         <div className="p-4">
           <div className="flex items-center space-x-4">
-            <LikeButton tripId={trip.id} initialCount={tripLikes} userId={trip.user_id} />
+            <LikeButton tripId={trip.id} initialCount={tripLikes} userId={tg.getUserId()} />
             <button
               className="flex items-center text-gray-600"
               onClick={() =>
