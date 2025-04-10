@@ -8,10 +8,27 @@ import { CreateTrip } from './components/create-trip/create-trip';
 import { PhotoViewer } from './components/photo-viewer';
 import SharePage from './pages/share';
 
-
 function App() {
   useEffect(() => {
     initTelegram();
+
+    // Глобальный перехват ошибок
+    window.onerror = function (msg, url, lineNo, columnNo, error) {
+      const message = [
+        '[window.onerror]',
+        `Message: ${msg}`,
+        `URL: ${url}`,
+        `Line: ${lineNo}, Col: ${columnNo}`,
+        `Error object: ${JSON.stringify(error)}`,
+      ].join('\n');
+      localStorage.setItem('lastWindowError', message);
+      return false;
+    };
+
+    window.onunhandledrejection = function (event) {
+      const message = `[onunhandledrejection] Reason: ${event.reason}`;
+      localStorage.setItem('lastWindowError', message);
+    };
   }, []);
 
   return (
