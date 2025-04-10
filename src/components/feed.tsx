@@ -47,6 +47,8 @@ export function Feed() {
   const [copiedTripUrl, setCopiedTripUrl] = useState<string | null>(null);
   const commentContainerRef = useRef<HTMLDivElement>(null);
   const currentUserId = tg.getUser()?.id.toString() || '';
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+
 
 
   useEffect(() => {
@@ -54,6 +56,7 @@ export function Feed() {
   }, [selectedYear, viewMode, searchQuery]);
 
   const loadTrips = async () => {
+    setDebugInfo(`⏳ Загрузка...\ncurrentUserId: ${currentUserId}\nviewMode: ${viewMode}`);
     try {
       let query = supabase
         .from('trips')
@@ -113,9 +116,14 @@ export function Feed() {
       }
 
       setTrips(loadedTrips);
+      setDebugInfo(prev => (prev || '') + `\n✅ Загружено ${loadedTrips.length} маршрутов:\n` +
+        loadedTrips.map(t => `• ${t.title} (${t.user_id})`).join('\n'));
+
     } catch (err) {
-      console.error('Error loading trips:', err);
+      const msg = err instanceof Error ? err.message : JSON.stringify(err);
+      console.error('[loadTrips] Failed:', err);
       setError('Failed to load trips');
+      setDebugInfo(prev => (prev || '') + `\n❌ Ошибка: ${msg}`);    
     } finally {
       setLoading(false);
     }
@@ -543,6 +551,11 @@ export function Feed() {
         confirmText="Ок"
         cancelText=""
       />
+      {debugInfo && (
+        <pre className="fixed bottom-4 left-4 bg-black/70 text-white text-xs p-3 rounded-lg max-w-[90vw] max-h-[40vh] overflow-auto z-50">
+          {debugInfo}
+        </pre>
+      )}
     </div>
   );
 }
