@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { tg } from '../lib/telegram'; // проверь путь, может быть другим
+import { tg, initTelegram } from '../lib/telegram';
 import { supabase } from '../lib/supabase';
 
 
@@ -16,23 +16,14 @@ export function SplashScreen() {
     script.async = true;
   
     script.onload = () => {
-      const tgInstance = window.Telegram?.WebApp;
-  
-      if (!tgInstance) {
-        setDebugInfo('❌ Telegram WebApp API не загружен');
-        return;
-      }
-  
-      tgInstance.ready();
-      tgInstance.expand();
+      initTelegram(); // ✅ инициализируем и сохраняем telegramUserId
+      const user = tg.getUser(); // ✅ достаём пользователя через tg, а не напрямую
   
       setIsAnimating(false);
   
-      const user = tgInstance.initDataUnsafe?.user;
-  
       setDebugInfo(JSON.stringify({
-        hasTelegram: !!tgInstance,
-        initData: tgInstance.initData,
+        hasTelegram: !!window.Telegram?.WebApp,
+        initData: window.Telegram?.WebApp?.initData,
         user: user ?? null
       }, null, 2));
   
@@ -55,12 +46,12 @@ export function SplashScreen() {
       }
   
       // ⏳ Переход через 5 сек
-      setTimeout(() => {
-        const startParam = tgInstance.initDataUnsafe?.start_param;
-        const tripId = startParam?.startsWith('trip_')
-          ? startParam.replace('trip_', '')
-          : null;
+      const startParam = tg.getStartParam();
+      const tripId = startParam?.startsWith('trip_')
+        ? startParam.replace('trip_', '')
+        : null;
   
+      setTimeout(() => {
         if (tripId) {
           navigate(`/trips/${tripId}`);
         } else {
@@ -70,12 +61,10 @@ export function SplashScreen() {
     };
   
     document.head.appendChild(script);
-  
     return () => {
       document.head.removeChild(script);
     };
   }, [navigate]);
-  
 
   return (
     <div 
