@@ -355,12 +355,14 @@ export function Feed() {
                   }`}
                 >
                   <div className="relative">
-                    <img
-                      src={trip.photo_url || 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34'}
-                      alt={trip.title}
-                      className="w-full h-48 object-cover"
-                      onClick={() => navigate(`/trips/${trip.id}`)}
-                    />
+                    <div className="relative aspect-[5/4] w-full overflow-hidden">
+                      <img
+                        src={trip.photo_url || 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34'}
+                        alt={trip.title}
+                        className="w-full h-full object-cover cursor-pointer"
+                        onClick={() => navigate(`/trips/${trip.id}`)}
+                      />
+                    </div>
                     <div className="absolute top-2 right-2 flex space-x-2">
                       <button
                         onClick={() => setShowShareMenu(trip.id)}
