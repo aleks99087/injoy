@@ -24,7 +24,7 @@ type Comment = {
   text: string;
   user_id: string;
   created_at: string;
-  user?: {
+  user: {
     first_name?: string;
     last_name?: string;
     photo_url?: string;
@@ -168,8 +168,11 @@ export function Feed() {
       const { data, error } = await supabase
         .from('trip_comments')
         .select(`
-          id, text, created_at, user_id,
-          users (
+          id,
+          text,
+          created_at,
+          user_id,
+          user:users (
             first_name,
             last_name,
             photo_url
@@ -178,16 +181,10 @@ export function Feed() {
         .eq('trip_id', tripId)
         .order('created_at', { ascending: true });
   
-      if (error) throw error;
-  
-      // Явно сохраняем users
-      setComments(prev => ({
-        ...prev,
-        [tripId]: (data || []).map((comment) => ({
-          ...comment,
-          users: comment.users
-        }))
-      }));
+        setComments(prev => ({
+          ...prev,
+          [tripId]: (data as Comment[]) || []
+        }));       
     } catch (err) {
       console.error('Error loading comments:', err);
     }
@@ -240,7 +237,6 @@ export function Feed() {
 
   const handleSubmitComment = async (tripId: string) => {
     if (!newComment.trim() || submittingComment) return;
-  
     try {
       setSubmittingComment(true);
   
@@ -253,7 +249,7 @@ export function Feed() {
         })
         .select(`
           id, text, created_at, user_id,
-          users (
+          user:users (
             first_name,
             last_name,
             photo_url
@@ -263,13 +259,11 @@ export function Feed() {
   
       if (error) throw error;
   
-      // Добавляем в comments c users
       setComments(prev => ({
         ...prev,
-        [tripId]: [...(prev[tripId] || []), { ...data, users: data.users }]
-      }));
+        [tripId]: [...(prev[tripId] || []), data as Comment]
+      }));      
   
-      // Обновляем счетчик комментов в trips
       const trip = trips.find(t => t.id === tripId);
       if (trip) {
         await supabase
@@ -536,14 +530,22 @@ export function Feed() {
                           className="space-y-4 max-h-[200px] overflow-y-auto pr-1"
                         >
                           {comments[trip.id]?.map((comment) => {
-                            const initials = (comment.users?.first_name?.[0] || '') + (comment.users?.last_name?.[0] || '');
-                            const fullName = `${comment.users?.first_name || ''} ${comment.users?.last_name || ''}`.trim() || 'Аноним';
-
+                            const initials = (comment.user?.first_name?.[0] || '') + (comment.user?.last_name?.[0] || '');
+                            const fullName = `${comment.user?.first_name || ''} ${comment.user?.last_name || ''}`.trim() || 'Аноним';
+                            
                             return (
                               <div key={comment.id} className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
-                                  {initials || 'A'}
-                                </div>
+                                {comment.user?.photo_url && !comment.user.photo_url.endsWith('.svg') ? (
+                                  <img
+                                    src={comment.user.photo_url}
+                                    alt="avatar"
+                                    className="w-8 h-8 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
+                                    {initials || 'A'}
+                                  </div>
+                                )}
                                 <div>
                                   <div className="text-sm text-gray-800 font-semibold">
                                     {fullName}
