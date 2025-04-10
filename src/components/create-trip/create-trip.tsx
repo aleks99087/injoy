@@ -8,7 +8,7 @@ import { TripForm } from './trip-form';
 import { PointForm } from './point-form';
 import { MapSelector } from './map-selector';
 import type { PointInput } from './types';
-import { countries } from '../../lib/countries';
+
 import { countryCoords } from '../../lib/country-coords';
 
 type Step = 'trip' | number;
