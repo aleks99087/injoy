@@ -535,24 +535,28 @@ export function Feed() {
                           ref={commentContainerRef}
                           className="space-y-4 max-h-[200px] overflow-y-auto pr-1"
                         >
-                          {comments[trip.id]?.map((comment) => (
-                            <div key={comment.id} className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
-                              {(comment.user?.first_name?.[0] || '') + (comment.user?.last_name?.[0] || '') || 'A'}
-                              </div>
-                              <div>
-                                <div className="text-sm text-gray-800 font-semibold">
-                                {`${comment.user?.first_name || ''} ${comment.user?.last_name || ''}`.trim() || 'Аноним'}
-                                </div>
-                                <div className="text-sm text-gray-600">{comment.text}</div>
-                                <div className="text-xs text-gray-400 mt-1">
-                                  {new Date(comment.created_at).toLocaleString()}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                          {comments[trip.id]?.map((comment) => {
+                            const initials = (comment.users?.first_name?.[0] || '') + (comment.users?.last_name?.[0] || '');
+                            const fullName = `${comment.users?.first_name || ''} ${comment.users?.last_name || ''}`.trim() || 'Аноним';
 
+                            return (
+                              <div key={comment.id} className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
+                                  {initials || 'A'}
+                                </div>
+                                <div>
+                                  <div className="text-sm text-gray-800 font-semibold">
+                                    {fullName}
+                                  </div>
+                                  <div className="text-sm text-gray-600">{comment.text}</div>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    {new Date(comment.created_at).toLocaleString()}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                         <div>
                           <textarea
                             rows={2}

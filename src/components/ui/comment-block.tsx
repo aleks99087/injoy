@@ -55,7 +55,7 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
     if (!newComment.trim()) return;
     try {
       setSubmitting(true);
-
+  
       const { data, error } = await supabase
         .from('trip_comments')
         .insert({
@@ -65,17 +65,18 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
         })
         .select('*, users(id, first_name, last_name, photo_url)')
         .single();
-
+  
       if (error) throw error;
-
-      setComments((prev) => [...prev, data]);
+  
+      // 🔧 Явно мержим users
+      setComments((prev) => [...prev, { ...data, users: data.users }]);
       setNewComment('');
     } catch (err) {
       console.error('Ошибка отправки комментария:', err);
     } finally {
       setSubmitting(false);
     }
-  };
+  };  
 
   return (
     <div className="px-4 py-4 text-sm text-gray-700 border-t bg-white">
