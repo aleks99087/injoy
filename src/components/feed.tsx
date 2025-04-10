@@ -57,25 +57,36 @@ export function Feed() {
 
   const loadTrips = async () => {
     setDebugInfo(`⏳ Загрузка...\ncurrentUserId: ${currentUserId}\nviewMode: ${viewMode}`);
+  
+    // ⛔️ Если личные маршруты, но нет user_id — не делаем запрос
+    if (viewMode === 'personal' && !currentUserId) {
+      setTrips([]);
+      setLoading(false);
+      setError(null);
+      setDebugInfo(prev => (prev || '') + '\nℹ️ Пропущен запрос — user_id пустой');
+      return;
+    }
+  
     try {
       let query = supabase
         .from('trips')
         .select('*')
         .eq('is_draft', false);
-
+  
       if (viewMode === 'personal') {
         query = query.eq('user_id', currentUserId);
       } else {
         query = query.eq('is_public', true);
       }
-
+  
       if (selectedYear !== 'all') {
-        query = query.gte('created_at', `${selectedYear}-01-01`)
+        query = query
+          .gte('created_at', `${selectedYear}-01-01`)
           .lt('created_at', `${parseInt(selectedYear) + 1}-01-01`);
       }
-
+  
       const { data, error: tripsError } = await query.order('created_at', { ascending: false });
-
+  
       if (tripsError) throw tripsError;
 
       let loadedTrips = data || [];
