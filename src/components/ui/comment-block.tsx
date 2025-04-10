@@ -113,7 +113,7 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
                   <div key={comment.id} className="flex items-start gap-2">
                     {comment.users?.photo_url ? (
                       <img
-                        src={comment.users.photo_url.replace('.svg', '.jpg')}
+                        src={comment.users.photo_url}
                         alt="avatar"
                         className="w-8 h-8 rounded-full object-cover"
                       />
