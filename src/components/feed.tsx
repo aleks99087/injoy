@@ -46,11 +46,16 @@ export function Feed() {
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedTripUrl, setCopiedTripUrl] = useState<string | null>(null);
   const commentContainerRef = useRef<HTMLDivElement>(null);
-  const currentUserId = tg.getUser()?.id ? tg.getUser()!.id.toString() : null;
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-
-
+  useEffect(() => {
+    const user = tg.getUser();
+    if (user?.id) {
+      setCurrentUserId(user.id.toString());
+    }
+  }, []);
+  
   useEffect(() => {
     loadTrips();
   }, [selectedYear, viewMode, searchQuery]);
