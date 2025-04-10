@@ -49,6 +49,11 @@ type Comment = {
   text: string;
   user_id: string;
   created_at: string;
+  user?: {
+    first_name?: string;
+    last_name?: string;
+    photo_url?: string;
+  };
 };
 
 const ANIMATION_DURATION = 500;
@@ -228,7 +233,17 @@ export function TripDetails() {
       if (!trip?.id) return;
       const { data, error } = await supabase
         .from('trip_comments')
-        .select('*')
+        .select(`
+          id,
+          text,
+          created_at,
+          user_id,
+          user:users (
+            first_name,
+            last_name,
+            photo_url
+          )
+        `)
         .eq('trip_id', trip.id)
         .order('created_at', { ascending: true });
   
@@ -610,28 +625,33 @@ export function TripDetails() {
               ref={commentsContainerRef}
               className="space-y-4 pr-1"
             >
-            {(comments[trip.id] || []).slice(0, 100).map((comment) => {
-              if (!comment || !comment.user_id || !comment.text) return null;
+            {(comments[trip.id] || []).map((comment) => {
+                const initials = (comment.user?.first_name?.[0] || '') + (comment.user?.last_name?.[0] || '');
+                const fullName = `${comment.user?.first_name || ''} ${comment.user?.last_name || ''}`.trim() || 'Аноним';
 
-              return (
-                <div key={comment.id} className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
-                  {typeof comment.user_id === 'string' && comment.user_id.length > 0
-                    ? comment.user_id[0].toUpperCase()
-                    : 'U'}
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-800 font-semibold">
-                    {typeof comment.user_id === 'string' ? comment.user_id.slice(0, 6) : 'user'}
+                return (
+                  <div key={comment.id} className="flex items-start gap-3">
+                    {comment.user?.photo_url && !comment.user.photo_url.endsWith('.svg') ? (
+                      <img
+                        src={comment.user.photo_url}
+                        alt="avatar"
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-white">
+                        {initials || 'A'}
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-sm text-gray-800 font-semibold">{fullName}</div>
+                      <div className="text-sm text-gray-600">{comment.text}</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {new Date(comment.created_at).toLocaleString()}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-600">{comment.text}</div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {new Date(comment.created_at).toLocaleString()}
-                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
             <div ref={commentsEndRef} />
             </div>
 
