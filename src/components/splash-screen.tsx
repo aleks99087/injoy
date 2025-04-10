@@ -8,16 +8,24 @@ export function SplashScreen() {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(true);
   const [debugUserId, setDebugUserId] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsAnimating(false);
 
       const user = tg.getUser();
-      if (user) {
-        setDebugUserId(user.id.toString()); // ⚠️ выведем на экран
 
-        // 🔁 сохраняем в БД
+      // 👁 Отладка: показываем всё, что прилетает из Telegram WebApp
+      setDebugInfo(JSON.stringify({
+        hasTelegram: !!window.Telegram?.WebApp,
+        initData: window.Telegram?.WebApp?.initData,
+        initDataUnsafe: window.Telegram?.WebApp?.initDataUnsafe,
+        user: user ?? null
+      }, null, 2));
+
+      // 🧠 Сохраняем user в Supabase, если он есть
+      if (user) {
         supabase.from('users').upsert({
           id: user.id.toString(),
           username: user.username,
@@ -27,10 +35,25 @@ export function SplashScreen() {
           photo_url: user.photo_url
         }).then(({ error }) => {
           if (error) console.error('Ошибка сохранения пользователя:', error);
+          else console.log('✅ Пользователь сохранён:', user.id);
         });
       } else {
-        console.warn('Telegram user не найден!');
+        console.warn('⛔️ Telegram user не найден!');
       }
+
+      // ⏳ Ждём 5 секунд перед переходом
+      setTimeout(() => {
+        const startParam = tg.getStartParam();
+        const tripId = startParam?.startsWith('trip_')
+          ? startParam.replace('trip_', '')
+          : null;
+
+        if (tripId) {
+          navigate(`/trips/${tripId}`);
+        } else {
+          navigate('/feed');
+        }
+      }, 5000);
 
       // доп. таймер для выхода после анимации
       setTimeout(() => {
