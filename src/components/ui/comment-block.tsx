@@ -31,7 +31,17 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
   const loadComments = async () => {
     const { data, error } = await supabase
       .from('trip_comments')
-      .select('id, text, created_at, user_id, user:users(first_name, last_name, photo_url)')
+      .select(`
+        id,
+        text,
+        created_at,
+        user_id,
+        user:users(
+          first_name,
+          last_name,
+          photo_url
+        )
+      `)
       .eq('trip_id', tripId)
       .order('created_at', { ascending: true });
 
@@ -63,7 +73,17 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
           user_id: currentUserId,
           text: newComment.trim(),
         })
-        .select('id, text, created_at, user_id, user:users(first_name, last_name, photo_url)')
+        .select(`
+          id,
+          text,
+          created_at,
+          user_id,
+          user:users(
+            first_name,
+            last_name,
+            photo_url
+          )
+        `)
         .single();
 
       if (error) throw error;
@@ -111,7 +131,7 @@ export function CommentBlock({ tripId }: CommentBlockProps) {
 
                 return (
                   <div key={comment.id} className="flex items-start gap-2">
-                    {comment.user?.photo_url ? (
+                    {comment.user?.photo_url && !comment.user.photo_url.endsWith('.svg') ? (
                       <img
                         src={comment.user.photo_url}
                         alt="avatar"
