@@ -1,10 +1,12 @@
+let telegramUserId: string | null = null; // ✅ глобальное хранилище userId
+
 declare global {
   interface Window {
     Telegram?: {
       WebApp: {
         initData: string;
         initDataUnsafe: {
-          start_param?: string; // ✅ добавлено
+          start_param?: string;
           user?: {
             id: number;
             first_name: string;
@@ -40,7 +42,7 @@ declare global {
           button_text_color: string;
         };
       };
-    };
+    }
   }
 }
 
@@ -83,6 +85,9 @@ export const tg = {
     }
     return undefined;
   },
+  getUserId: () => {
+    return telegramUserId;
+  },
   getColorScheme: () => {
     if (isTelegramWebApp()) {
       return window.Telegram?.WebApp.colorScheme;
@@ -101,5 +106,9 @@ export const initTelegram = () => {
   if (isTelegramWebApp()) {
     tg.ready();
     tg.expand();
+    const user = tg.getUser();
+    if (user?.id) {
+      telegramUserId = user.id.toString(); // ✅ сохраняем глобально
+    }
   }
 };

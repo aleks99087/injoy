@@ -47,35 +47,29 @@ export function Feed() {
   const [copiedTripUrl, setCopiedTripUrl] = useState<string | null>(null);
   const commentContainerRef = useRef<HTMLDivElement>(null);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const userId = tg.getUserId();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const user = tg.getUser();
-    if (user?.id) {
-      setCurrentUserId(user.id.toString());
+    const userId = tg.getUserId();
+    if (userId) {
+      setCurrentUserId(userId);
     }
-
+  
     const errorFromStorage = localStorage.getItem('lastWindowError');
     if (errorFromStorage) {
       setGlobalError(errorFromStorage);
     }
   }, []);
-
-  useEffect(() => {
-    const user = tg.getUser();
-    if (user?.id) {
-      setCurrentUserId(user.id.toString());
-    }
-  }, []);
+  
   
   useEffect(() => {
     loadTrips();
   }, [selectedYear, viewMode, searchQuery]);
 
   const loadTrips = async () => {
-    const user = tg.getUser();
-    const currentUserId = user?.id ? user.id.toString() : null;
+    const currentUserId = tg.getUserId();
   
     setDebugInfo(
       `⏳ Загрузка...\ncurrentUserId: ${currentUserId || '[пусто]'}\nviewMode: ${viewMode}`
@@ -586,23 +580,6 @@ export function Feed() {
         confirmText="Ок"
         cancelText=""
       />
-      {debugInfo && (
-        <pre className="fixed bottom-4 left-4 bg-black/70 text-white text-xs p-3 rounded-lg max-w-[90vw] max-h-[40vh] overflow-auto z-50">
-          {debugInfo}
-        </pre>
-      )}
-      {globalError && (
-        <div className="fixed bottom-4 left-4 bg-red-100 border border-red-400 text-red-700 p-3 rounded-lg max-w-[90vw] max-h-[40vh] overflow-auto z-50">
-          <strong>Глобальная ошибка:</strong>
-          <pre className="text-xs whitespace-pre-wrap">{globalError}</pre>
-        </div>
-      )}
-
-      {debugInfo && (
-        <pre className="fixed bottom-4 right-4 bg-black/70 text-white text-xs p-3 rounded-lg max-w-[90vw] max-h-[40vh] overflow-auto z-50">
-          {debugInfo}
-        </pre>
-      )}
     </div>
   );
 }
