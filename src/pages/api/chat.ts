@@ -1,17 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
-import { Configuration, OpenAIApi } from 'openai';
-import type { NextApiRequest, NextApiResponse } from 'next';
+import OpenAI from 'openai';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // нужен именно service role key
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const openai = new OpenAIApi(
-  new Configuration({ apiKey: process.env.OPENAI_API_KEY })
-);
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY!,
+});
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -24,13 +24,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // 1. Сохраняем сообщение пользователя
-    await supabase.from('chat_history').insert({
-      user_id,
-      role: 'user',
-      message
-    });
+    await supabase.from('chat_history').insert({ user_id, role: 'user', message });
 
-    // 2. Получаем последние 10 сообщений
+    // 2. Получаем последние сообщения
     const { data: history } = await supabase
       .from('chat_history')
       .select('role, message')
@@ -38,30 +34,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .order('created_at', { ascending: true })
       .limit(10);
 
-    const messages = [
-      { role: 'system', content: 'Ты ассистент по путешествиям. Помогай планировать маршруты.' },
-      ...(history || []).map((h) => ({ role: h.role, content: h.message })),
+    const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+      {
+        role: 'system',
+        content: 'Ты ассистент по путешествиям. Помогай планировать маршруты.',
+      },
+      ...(history || []).map((h) => ({
+        role: h.role as 'user' | 'assistant' | 'system',
+        content: h.message,
+      })),
     ];
 
     // 3. Запрос к OpenAI
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       messages,
       temperature: 0.8,
     });
 
-    const assistantMessage = completion.data.choices[0].message?.content || 'Ошибка генерации';
+    const assistantMessage = completion.choices[0].message.content || 'Ошибка генерации';
 
     // 4. Сохраняем ответ ассистента
     await supabase.from('chat_history').insert({
       user_id,
       role: 'assistant',
-      message: assistantMessage
+      message: assistantMessage,
     });
 
     return res.status(200).json({ reply: assistantMessage });
-  } catch (error: any) {
-    console.error('AI error:', error);
-    return res.status(500).json({ error: 'Ошибка обработки запроса' });
+  } catch (err) {
+    console.error('AI error:', err);
+    return res.status(500).json({ error: 'Ошибка генерации' });
   }
 }
