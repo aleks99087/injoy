@@ -6,6 +6,7 @@ import { Feed } from './components/feed';
 import { TripDetails } from './components/trip-details';
 import { CreateTrip } from './components/create-trip/create-trip';
 import { PhotoViewer } from './components/photo-viewer';
+import { AiAssistant } from './components/AI/AiAssistant';
 import SharePage from './pages/share';
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
         <Route path="/create" element={<CreateTrip />} />
         <Route path="/points/:pointId/photos" element={<PhotoViewer />} />
         <Route path="/share/:id" element={<SharePage />} />
+        <Route path="/ai-assistant" element={<AiAssistant />} />
       </Routes>
     </BrowserRouter>
   );

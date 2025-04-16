@@ -315,14 +315,18 @@ export function Feed() {
               IN<span className="text-[#FA5659]">JOY</span>
             </h1>
             <div className="flex items-center space-x-4">
-              {viewMode === 'personal' && (
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                >
-                  <Menu className="w-6 h-6" />
-                </button>
-              )}
+              {/* New AI Assistant Icon */}
+              <button
+                onClick={() => navigate('/ai-assistant')}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <img
+                  src="https://storage.yandexcloud.net/my-app-frames/miniINJOY/Group%201052.svg"
+                  alt="AI Assistant"
+                  className="w-6 h-6"
+                />
+              </button>
+              {/* Profile Icon */}
               <button
                 onClick={() => navigate('/profile')}
                 className="p-2 hover:bg-gray-100 rounded-full"
