@@ -42,6 +42,7 @@ export function AiAssistant() {
     import.meta.env.VITE_SUPABASE_URL!,
     import.meta.env.VITE_SUPABASE_ANON_KEY!
   );
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL!;
 
   useEffect(() => {
     let phraseIndex = 0;
@@ -93,7 +94,7 @@ export function AiAssistant() {
     const fetchHistory = async () => {
       try {
         const user_id = getUserId();
-        const res = await fetch(`https://ai-assistant-api-r657.onrender.com/api/chat-history?user_id=${user_id}`);
+        const res = await fetch(`${API_BASE_URL}/api/chat-history?user_id=${user_id}`);
         const data = await res.json();
         if (Array.isArray(data.messages)) {
           setMessages(data.messages.map(msg => ({
@@ -112,7 +113,7 @@ export function AiAssistant() {
   const sendPromptToAI = async (prompt: string) => {
     try {
       const user_id = getUserId();
-      const res = await fetch('http://localhost:3001/api/chat', {
+      const res = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
