@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { Sparkles, Plane, PartyPopper, MapPinned, Hotel, ArrowLeft } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL!;
 
 const suggestions = [
   { icon: <Plane className="w-4 h-4 mr-2" />, text: 'Создать новый маршрут', prompt: 'Создай новый маршрут' },
@@ -42,7 +43,6 @@ export function AiAssistant() {
     import.meta.env.VITE_SUPABASE_URL!,
     import.meta.env.VITE_SUPABASE_ANON_KEY!
   );
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL!;
 
   useEffect(() => {
     let phraseIndex = 0;
