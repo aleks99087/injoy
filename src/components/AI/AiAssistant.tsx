@@ -88,12 +88,12 @@ export function AiAssistant() {
       return 'unknown-user';
     }
   };
-
+  
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         const user_id = getUserId();
-        const res = await fetch(`http://localhost:3001/api/chat-history?user_id=${user_id}`);
+        const res = await fetch(`https://ai-assistant-api-r657.onrender.com/api/chat-history?user_id=${user_id}`);
         const data = await res.json();
         if (Array.isArray(data.messages)) {
           setMessages(data.messages.map(msg => ({
