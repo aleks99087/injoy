@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { Sparkles, Plane, PartyPopper, MapPinned, Hotel, ArrowLeft } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
 const suggestions = [
   { icon: <Plane className="w-4 h-4 mr-2" />, text: 'Создать новый маршрут', prompt: 'Создай новый маршрут' },
@@ -28,10 +29,19 @@ export function AiAssistant() {
   const [input, setInput] = useState('');
   const [placeholder, setPlaceholder] = useState('');
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  type Message = 
+  | { role: 'user' | 'assistant'; content: string }
+  | { role: 'trip'; content: string };
+
+  const [messages, setMessages] = useState<Message[]>([]);
+
   const [rotatingSuggestions, setRotatingSuggestions] = useState<string[]>(fallbackSuggestions);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasUserSpoken, setHasUserSpoken] = useState(false);
+  const supabase = createClient(
+    import.meta.env.VITE_SUPABASE_URL!,
+    import.meta.env.VITE_SUPABASE_ANON_KEY!
+  );
 
   useEffect(() => {
     let phraseIndex = 0;
@@ -79,30 +89,55 @@ export function AiAssistant() {
     }
   };
 
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const user_id = getUserId();
+        const res = await fetch(`http://localhost:3001/api/chat-history?user_id=${user_id}`);
+        const data = await res.json();
+        if (Array.isArray(data.messages)) {
+          setMessages(data.messages.map(msg => ({
+            role: msg.role,
+            content: msg.message
+          })));
+        }
+      } catch (err) {
+        console.error('Ошибка при загрузке истории чата:', err);
+      }
+    };
+  
+    fetchHistory();
+  }, []);  
+
   const sendPromptToAI = async (prompt: string) => {
     try {
       const user_id = getUserId();
-      const res = await fetch('https://ai-assistant-api-r657.onrender.com/api/chat', {
+      const res = await fetch('http://localhost:3001/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ message: prompt, user_id }),
       });
-
+  
       const data = await res.json();
+  
       if (data.suggestions?.length > 0) {
         setRotatingSuggestions(data.suggestions);
       } else {
         setRotatingSuggestions(fallbackSuggestions);
       }
-      return data.reply;
+  
+      return {
+        reply: data.reply,
+        tripId: data.tripId || null, // добавляем tripId
+      };
     } catch (err) {
       console.error('Ошибка при запросе к AI:', err);
       setRotatingSuggestions(fallbackSuggestions);
-      return 'Произошла ошибка. Попробуйте ещё раз.';
+      return { reply: 'Произошла ошибка. Попробуйте ещё раз.', tripId: null };
     }
-  };
+  };  
 
   const handleSubmit = async (prompt: string) => {
     if (!prompt.trim()) return;
@@ -110,10 +145,55 @@ export function AiAssistant() {
     setMessages((prev) => [...prev, { role: 'user', content: prompt }]);
     setInput('');
     setLoading(true);
-    const aiReply = await sendPromptToAI(prompt);
-    setMessages((prev) => [...prev, { role: 'assistant', content: aiReply }]);
+  
+    const aiResponse = await sendPromptToAI(prompt);
+  
+    if (aiResponse.tripId) {
+      setMessages((prev) => [...prev, { role: 'trip', content: aiResponse.tripId }]);
+    } else {
+      setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse.reply }]);
+    }
+  
     setLoading(false);
   };
+
+  function TripCard({ tripId }: { tripId: string }) {
+    const navigate = useNavigate();
+    const [trip, setTrip] = useState<null | {
+      id: string;
+      title: string;
+      photo_url: string;
+    }>(null);
+  
+    useEffect(() => {
+      (async () => {
+        const { data } = await supabase
+          .from('trips')
+          .select('id, title, photo_url')
+          .eq('id', tripId)
+          .single();
+  
+        setTrip(data);
+      })();
+    }, [tripId]);
+  
+    if (!trip) return <div className="text-sm text-gray-400">Загружаем маршрут...</div>;
+  
+    return (
+      <div
+        onClick={() => navigate(`/trips/${trip.id}`)}
+        className="cursor-pointer rounded-xl overflow-hidden shadow-md border bg-white max-w-xs"
+      >
+        {trip.photo_url && (
+          <img src={trip.photo_url} alt={trip.title} className="w-full h-32 object-cover" />
+        )}
+        <div className="p-3">
+          <h3 className="text-sm font-semibold text-gray-800">{trip.title}</h3>
+          <p className="text-xs text-gray-500">Нажмите, чтобы открыть</p>
+        </div>
+      </div>
+    );
+  }  
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -145,16 +225,28 @@ export function AiAssistant() {
           </button>
         ))}
 
-        {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`p-3 rounded-xl text-sm whitespace-pre-line max-w-[85%] ${
-              msg.role === 'user' ? 'bg-[#FA5659] text-white self-end ml-auto' : 'bg-gray-100 text-gray-800'
-            }`}
-          >
-            {msg.content}
-          </div>
-        ))}
+        {messages.map((msg, idx) => {
+          if (msg.role === 'trip') {
+            return (
+              <div key={idx} className="self-start mr-auto">
+                <TripCard tripId={msg.content} />
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={idx}
+              className={`p-3 rounded-xl text-sm whitespace-pre-line max-w-[85%] ${
+                msg.role === 'user'
+                  ? 'bg-[#FA5659] text-white self-end ml-auto'
+                  : 'bg-gray-100 text-gray-800 self-start mr-auto'
+              }`}
+            >
+              {msg.content}
+            </div>
+          );
+        })}
 
         {loading && <div className="text-gray-500 text-sm">Joy печатает…</div>}
 
